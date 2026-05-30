@@ -147,7 +147,9 @@ export function WhatsAppSettings({ userId }: WhatsAppSettingsProps) {
                 <span className="text-[15px] text-white">{p.label}</span>
                 <button
                   onClick={() => toggleWaPermission(p.key)}
-                  aria-pressed={waPermissions[p.key] ? 'true' : 'false'}
+                  aria-pressed={waPermissions[p.key]}
+                  aria-label={`Toggle ${p.label} permission`}
+                  title={`Toggle ${p.label} permission`}
                   className={`w-11 h-6 rounded-full transition-all flex items-center ${waPermissions[p.key] ? 'bg-emerald-500' : 'bg-zinc-700'}`}
                 >
                   <span className={`block w-5 h-5 rounded-full bg-white transition-all shadow-sm ${waPermissions[p.key] ? 'ml-5' : 'ml-[2px]'}`} />

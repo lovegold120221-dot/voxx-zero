@@ -3135,6 +3135,8 @@ ${historyContext}
           <button
             onClick={isActive ? stopSession : startSession}
             disabled={connecting}
+            aria-label={isActive ? "Stop Voice Assistant" : "Start Voice Assistant"}
+            title={isActive ? "Stop Voice Assistant" : "Start Voice Assistant"}
             className={`absolute left-1/2 -translate-x-1/2 bottom-[40px] sm:bottom-[55px] w-14 h-14 sm:w-20 sm:h-20 rounded-full flex flex-col items-center justify-center shadow-xl transition-all duration-300 border-4 border-[#161312] z-30 ${
               isActive
                 ? 'bg-zinc-900 text-[#d0a78b] border-2 border-[#d0a78b]/40'
@@ -3380,15 +3382,16 @@ ${historyContext}
                     <span className="text-[15px] text-white">Enable Ambient Sound</span>
                     <button
                       onClick={() => setAmbientEnabled(v => !v)}
-                      aria-pressed={ambientEnabled ? 'true' : 'false'}
+                      aria-pressed={ambientEnabled}
                       className={`w-11 h-6 rounded-full transition-all flex items-center ${ambientEnabled ? 'bg-emerald-500' : 'bg-zinc-700'}`}
                     >
                       <span className={`block w-5 h-5 rounded-full bg-white transition-all shadow-sm ${ambientEnabled ? 'ml-5' : 'ml-[2px]'}`} />
                     </button>
                   </div>
                   <div className="p-4 flex items-center gap-4">
-                    <span className="text-[13px] text-zinc-500 shrink-0 w-8">Vol</span>
+                    <label htmlFor="ambient-volume-slider" className="text-[13px] text-zinc-500 shrink-0 w-8">Vol</label>
                     <input
+                      id="ambient-volume-slider"
                       type="range"
                       min="0"
                       max="20"
@@ -3397,6 +3400,8 @@ ${historyContext}
                       onChange={(e) => setAmbientVolume(parseInt(e.target.value, 10))}
                       disabled={!ambientEnabled}
                       className="w-full accent-emerald-500 h-1.5 bg-white/5 rounded-lg appearance-none cursor-pointer disabled:opacity-40"
+                      aria-label="Ambient Volume"
+                      title="Ambient Volume"
                     />
                     <span className="text-[13px] text-zinc-500 shrink-0 w-6 text-right">{ambientVolume}</span>
                   </div>

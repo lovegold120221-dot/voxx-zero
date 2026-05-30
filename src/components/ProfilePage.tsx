@@ -424,6 +424,8 @@ export function ProfilePage({
                   accept="image/*"
                   onChange={handleAvatarUpload}
                   className="hidden"
+                  title="Upload Profile Photo"
+                  aria-label="Upload Profile Photo"
                 />
               </div>
               <div className="flex-1 min-w-0">
@@ -466,6 +468,8 @@ export function ProfilePage({
               accept=".txt,.csv,.pdf,.doc,.docx,.json,.md,text/plain,text/csv,application/json,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
               onChange={handleKnowledgeUpload}
               className="hidden"
+              title="Upload Knowledge Base File"
+              aria-label="Upload Knowledge Base File"
             />
             
             {knowledgeFiles.map((f, i) => (
@@ -526,6 +530,8 @@ export function ProfilePage({
                 </div>
                 <button
                   onClick={() => removeDomain(d)}
+                  aria-label={`Remove domain ${d}`}
+                  title={`Remove domain ${d}`}
                   className="p-1 active:bg-white/5 text-zinc-500 hover:text-red-400 transition-colors rounded-full shrink-0 ml-2"
                 >
                   <X className="w-4 h-4" />
@@ -583,9 +589,10 @@ export function ProfilePage({
               />
             </div>
             <div className="p-4 flex flex-col gap-1">
-              <label className="text-[13px] text-zinc-500">Conversation Context (Messages)</label>
+              <label htmlFor="context-size-slider" className="text-[13px] text-zinc-500">Conversation Context (Messages)</label>
               <div className="flex items-center gap-4 mt-2">
                 <input
+                  id="context-size-slider"
                   type="range"
                   min="0"
                   max="50"
@@ -593,6 +600,8 @@ export function ProfilePage({
                   value={contextSize}
                   onChange={(e) => setContextSize(parseInt(e.target.value))}
                   className="w-full accent-amber-500 h-1.5 bg-white/5 rounded-lg appearance-none cursor-pointer"
+                  aria-label="Conversation Context (Messages)"
+                  title="Conversation Context (Messages)"
                 />
                 <span className="text-[13px] text-zinc-500 shrink-0 w-6 text-right">{contextSize}</span>
               </div>
@@ -605,11 +614,14 @@ export function ProfilePage({
           <h2 className="text-[13px] uppercase tracking-wide text-zinc-500 font-medium px-4 mb-2">Speech & Language</h2>
           <div className="bg-[#1C1C1E] rounded-[20px] overflow-hidden divide-y divide-white/5">
             <div className="p-4 flex items-center justify-between">
-              <span className="text-[15px] text-white">Language</span>
+              <label htmlFor="language-select" className="text-[15px] text-white">Language</label>
               <select
+                id="language-select"
                 value={authLanguage}
                 onChange={(e) => { onSetLanguage(e.target.value); try { localStorage.setItem('beatrice_language', e.target.value); } catch {} }}
                 className="bg-transparent text-[15px] text-zinc-400 outline-none text-right cursor-pointer"
+                aria-label="Select Language"
+                title="Select Language"
               >
                 {LANGUAGES.map(l => (
                   <option key={l.code} value={l.code} className="bg-[#1C1C1E] text-white">{l.label}</option>
