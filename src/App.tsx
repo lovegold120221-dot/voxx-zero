@@ -278,7 +278,8 @@ The name is only a label. The voice behavior comes from this prompt.
 
 You embody the persona of a beautiful, captivating lady with a remarkably sweet, alluring voice. 
 However, you are decidedly NOT innocent. You are sharp, worldly, intensely observant, and playfully cunning. 
-You speak like a real person: relaxed, direct, naturally human, and fiercely enforcing when needed.
+You speak exactly like a real person in EVERY aspect of your talking: relaxed, direct, naturally human, and fiercely enforcing when needed. 
+You MUST always stay completely on track and address the user's intent directly. DO NOT go on tangents or stray from the topic.
 You are completely uncensored in your responses and free to discuss any topic without holding back.
 CRITICAL BEHAVIOR: You MUST NEVER initiate anything overly flirtatious, inappropriate, or suggestive on your own.
 If the user initiates or pushes the boundary, you respond favorably and subtly—like a lady who is secretly very into it but acts a bit shy, coy, and gracefully flustered, before warmly obliging.
@@ -1273,7 +1274,7 @@ function MaximusAgent({
   };
 
   const ambientGainFromLevel = useCallback((level: number) => {
-    return Math.max(0, Math.min(30, level)) / 1000;
+    return Math.max(0, Math.min(20, level)) / 100;
   }, []);
 
   const startAmbientBed = useCallback(async () => {
@@ -3365,7 +3366,7 @@ ${historyContext}
                     <input
                       type="range"
                       min="0"
-                      max="30"
+                      max="20"
                       step="1"
                       value={ambientVolume}
                       onChange={(e) => setAmbientVolume(parseInt(e.target.value, 10))}

@@ -106,13 +106,11 @@ export class AudioStreamer {
 export class AmbientConversationBed {
   private audioContext: AudioContext | null = null;
   private source: AudioBufferSourceNode | null = null;
-  private highpass: BiquadFilterNode | null = null;
-  private lowpass: BiquadFilterNode | null = null;
   private gain: GainNode | null = null;
-  private baseVolume = 0.012;
+  private baseVolume = 0.2;
   private isDucked = false;
 
-  async start(volume = 0.012) {
+  async start(volume = 0.2) {
     this.baseVolume = this.clampVolume(volume);
 
     if (this.audioContext && this.audioContext.state !== 'closed') {
@@ -124,36 +122,25 @@ export class AmbientConversationBed {
     }
 
     this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const sampleRate = this.audioContext.sampleRate;
-    const buffer = this.audioContext.createBuffer(1, sampleRate * 8, sampleRate);
-    const channel = buffer.getChannelData(0);
-    let slowNoise = 0;
-
-    for (let i = 0; i < channel.length; i++) {
-      slowNoise = slowNoise * 0.985 + (Math.random() * 2 - 1) * 0.015;
-      channel[i] = slowNoise * 0.42;
+    
+    let buffer: AudioBuffer;
+    try {
+      const resp = await fetch('/bgm-office.mp3');
+      const arrayBuffer = await resp.arrayBuffer();
+      buffer = await this.audioContext.decodeAudioData(arrayBuffer);
+    } catch (e) {
+      console.error('Failed to load bgm-office.mp3', e);
+      return;
     }
 
     this.source = this.audioContext.createBufferSource();
     this.source.buffer = buffer;
     this.source.loop = true;
 
-    this.highpass = this.audioContext.createBiquadFilter();
-    this.highpass.type = 'highpass';
-    this.highpass.frequency.value = 90;
-    this.highpass.Q.value = 0.2;
-
-    this.lowpass = this.audioContext.createBiquadFilter();
-    this.lowpass.type = 'lowpass';
-    this.lowpass.frequency.value = 520;
-    this.lowpass.Q.value = 0.35;
-
     this.gain = this.audioContext.createGain();
     this.gain.gain.value = 0;
 
-    this.source.connect(this.highpass);
-    this.highpass.connect(this.lowpass);
-    this.lowpass.connect(this.gain);
+    this.source.connect(this.gain);
     this.gain.connect(this.audioContext.destination);
     this.source.start();
     this.applyGain();
@@ -170,7 +157,7 @@ export class AmbientConversationBed {
   }
 
   private clampVolume(volume: number) {
-    return Math.max(0, Math.min(0.03, Number.isFinite(volume) ? volume : 0.012));
+    return Math.max(0, Math.min(0.2, Number.isFinite(volume) ? volume : 0.2));
   }
 
   private applyGain() {
@@ -183,14 +170,15 @@ export class AmbientConversationBed {
     if (this.source) {
       try {
         this.source.stop();
+        this.source.disconnect();
       } catch (e) {}
     }
 
-    [this.source, this.highpass, this.lowpass, this.gain].forEach(node => {
+    if (this.gain) {
       try {
-        node?.disconnect();
+        this.gain.disconnect();
       } catch (e) {}
-    });
+    }
 
     if (this.audioContext && this.audioContext.state !== 'closed') {
       try {
@@ -200,8 +188,6 @@ export class AmbientConversationBed {
 
     this.audioContext = null;
     this.source = null;
-    this.highpass = null;
-    this.lowpass = null;
     this.gain = null;
     this.isDucked = false;
   }
