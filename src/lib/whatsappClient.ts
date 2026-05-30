@@ -20,7 +20,7 @@ export function getBackendUrl(): string {
     return isLocal ? `http://${window.location.hostname}:4200` : window.location.origin;
   }
 
-  return 'http://localhost:4200';
+  return 'http://168.231.78.113:4200';
 }
 
 export function setBackendUrl(url: string): string {
