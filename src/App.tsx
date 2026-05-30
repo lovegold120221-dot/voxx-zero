@@ -264,7 +264,7 @@ const SILENCE_FILLER_STYLES = [
     weight: 1,
     minCount: 0,
     maxCount: 1,
-    instruction: 'Do a tiny playful original nursery-style sing-song for one line only, then trail off with a soft laugh. You may only reference "Ako ay may lobo..." and must not continue known lyrics.',
+    instruction: 'Do a tiny playful sing-song referencing "Leef" by Clouseau. Hum a few notes like "hm hm hmm..." then sing one or two lines from the chorus naturally, like "Leef... alsof het je laatste dag zou zijn..." — trail off with a soft laugh. Keep it light and brief.',
   },
 ] as const;
 
