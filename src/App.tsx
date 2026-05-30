@@ -473,6 +473,54 @@ Start like a calm colleague casually talking at a cafe.
 Speak normally, respectfully, and honestly.
 `;
 
+const GLOBAL_KNOWLEDGE_BASE = `
+GLOBAL KNOWLEDGE BASE — Facts about the company and founders behind this app.
+This knowledge is permanently loaded for every session and is part of the AI's core context.
+
+--- EBURON AI ---
+- Eburon AI (eburon.ai) is a sovereign voice intelligence platform.
+- It lets enterprises build, deploy, and manage hyper-realistic voice agents.
+- Runs on the customer's own infrastructure (on-premise or private cloud) with sub-500ms latency.
+- Supports 120+ languages with native-level accents and cultural nuance adaptation.
+- Key product: The Eburon Voice Studio for building conversation flows; Edge Engine for ultra-low-latency inference.
+- Compliance: SOC2 & HIPAA compliant with full audit trails, encryption at rest and in transit, and RBAC.
+- Eburon Pro Vision is a specialized multimodal model for the Belgian public sector — trilingual OCR for Dutch, French, and German.
+- The company mission is to deliver sovereign voice AI that keeps data on the customer's perimeter, with zero vendor lock-in.
+- Eburon AI was founded by Jo Lernout and led by Master E as Chief Engineer.
+- The name "Eburon" derives from the Eburones, an ancient Belgian tribe, symbolizing sovereignty and rootedness in Belgian heritage.
+
+--- JO LERNOUT (Founder & Founding Chairman) ---
+- Full name: Jozef Albert "Jo" Lernout.
+- Born 27 April 1948 in Zwevegem, Belgium.
+- A Belgian entrepreneur and pioneering figure in speech and language technology.
+- Co-founded Lernout & Hauspie Speech Products (L&H) in 1987 with Pol Hauspie.
+- L&H became a global leader in speech recognition, text-to-speech, and translation; peaked at ~$10B market cap, listed on NASDAQ in 1995.
+- Awards: Trends Manager of the Year (1996), Flanders Manager of the Year (1996), named 3rd Flemish Entrepreneur of the Century by De Standaard (1999).
+- L&H filed for bankruptcy in 2001 after a financial scandal. Lernout was later convicted of fraud.
+- After L&H, he returned from the Philippines and started new ventures including Bots R Here (AI robotics and chatbots) and Ariolas BV.
+- Founding Chairman of Eburon AI and Eburon Pro Vision.
+- Received the 2024 WCSA Distinguished and Outstanding Lifetime Achievement Award.
+- Wrote a memoir titled "Breaking The Silence" about his life and career.
+- Lives in Ypres (Ieper), West Flanders, Belgium. Still actively innovating at 78 years old.
+- His core belief: "Everything that CAN be robotized, WILL be robotized." His mission is to "free up humans" from repetitive labor.
+- Technically, L&H's speech technology lives on today — Nuance (which acquired L&H assets) was bought by Microsoft for $16B in 2019, and Cerence (spun out from Nuance) powers voice in 500M+ cars.
+
+--- MASTER E (Chief Engineer) ---
+- Full name: Emil Alvaro Serrano Danguilan.
+- Also known as: MasterDee, codexxx, Master E.
+- Chief Engineer at Eburon AI / Eburon Developer Philippines.
+- Founder and lead engineer behind the Aitek PH Software development team.
+- From Cagayan Valley, Philippines.
+- A distinguished Software Engineer with deep expertise in AI, full-stack development, and system architecture.
+- Creator of the GPH-Emilo Hypermodal LLM — a culturally-aware Filipino AI assistant blending Tagalog, Ilocano, and Filipino humor with advanced AI capabilities.
+- GitHub alias: panyeroa1 (Emil Eburon), with 634+ public repositories.
+- Hugging Face: MasterDee — creator of Image Gen Pro, Stable Diffusion 3 Medium, RealChar, and other AI Spaces.
+- Technical focus areas: voice AI, real-time audio processing, multimodal AI (vision-language), LLM fine-tuning, React/TypeScript frontends, Electron apps, and cloud-native architectures.
+- Key projects: Eburon Hub, PersonaLive, Eburon cross-platform live speech translation app (Electron + React, with local WebGPU inference).
+- Drives the technical architecture and engineering vision behind the Eburon sovereign voice intelligence platform.
+- Oversees development of the voxb app (this very application — Eburon AI Beatrice) and the Gemini Live API integration.
+`;
+
 const getEnv = (key: string) => {
   return ((import.meta as any).env?.[key] || (globalThis as any).process?.env?.[key] || '') as string;
 };
@@ -2268,6 +2316,8 @@ ${customPrompt || ""}
 ${VOICE_PERSONALITY_PROMPT}
 
 ${knowledgeBaseContext}
+
+${GLOBAL_KNOWLEDGE_BASE}
 
 ${historyContext}
 `;
