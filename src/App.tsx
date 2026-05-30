@@ -1287,7 +1287,7 @@ function MaximusAgent({
       audioStreamerRef.current = new AudioStreamer();
     }
 
-    await audioStreamerRef.current.init(16000);
+    await audioStreamerRef.current.init(24000);
   };
 
   const ambientGainFromLevel = useCallback((level: number) => {
