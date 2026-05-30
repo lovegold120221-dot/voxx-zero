@@ -24,6 +24,7 @@ import { ChatPage } from './components/ChatPage';
 import { VideoPage } from './components/VideoPage';
 import { DocumentViewer } from './components/DocumentViewer';
 import { ProfilePage } from './components/ProfilePage';
+import { WhatsAppSettings } from './components/WhatsAppSettings';
 import { AdminPortal } from './components/AdminPortal';
 import { startWhatsAppPairing, getWhatsAppStatus, disconnectWhatsApp } from './lib/whatsappClient';
 import { webGlance } from './lib/webClient';
@@ -3192,6 +3193,20 @@ ${historyContext}
         {showProfilePage && (
           <ProfilePage
             onClose={() => setShowProfilePage(false)}
+            personaName={personaName}
+            setPersonaName={setPersonaName}
+            customPrompt={customPrompt}
+            setCustomPrompt={setCustomPrompt}
+            userTitle={userTitle}
+            setUserTitle={setUserTitle}
+            contextSize={contextSize}
+            setContextSize={setContextSize}
+            authLanguage={authLanguage}
+            onSetLanguage={onSetLanguage}
+            selectedVoice={selectedVoice}
+            setSelectedVoice={setSelectedVoice}
+            saveSettings={saveSettings}
+            isSaving={isSaving}
           />
         )}
       </AnimatePresence>
@@ -3364,90 +3379,7 @@ ${historyContext}
 
 
 
-              {/* Persona Settings */}
-              <section>
-                <h2 className="text-[13px] uppercase tracking-wide text-zinc-500 font-medium px-4 mb-2">Persona Configuration</h2>
-                <div className="bg-[#1C1C1E] rounded-[20px] overflow-hidden divide-y divide-white/5">
-                  <div className="p-4 flex flex-col gap-1">
-                    <label className="text-[13px] text-zinc-500">Persona Name</label>
-                    <input
-                      type="text"
-                      value={personaName}
-                      onChange={(e) => setPersonaName(e.target.value)}
-                      placeholder="e.g. Beatrice"
-                      className="bg-transparent text-[15px] text-white focus:outline-none"
-                    />
-                  </div>
-                  <div className="p-4 flex flex-col gap-1">
-                    <label className="text-[13px] text-zinc-500">System Prompt Context</label>
-                    <textarea
-                      value={customPrompt}
-                      onChange={(e) => setCustomPrompt(e.target.value)}
-                      placeholder="Enter character traits or specific rules..."
-                      className="bg-transparent text-[15px] text-white focus:outline-none h-24 resize-none leading-relaxed"
-                    />
-                  </div>
-                  <div className="p-4 flex flex-col gap-1">
-                    <label className="text-[13px] text-zinc-500">What Should Beatrice Call You?</label>
-                    <input
-                      type="text"
-                      value={userTitle}
-                      onChange={(e) => setUserTitle(e.target.value)}
-                      placeholder="e.g. Boss"
-                      className="bg-transparent text-[15px] text-white focus:outline-none"
-                    />
-                  </div>
-                  <div className="p-4 flex flex-col gap-1">
-                    <label className="text-[13px] text-zinc-500">Conversation Context (Messages)</label>
-                    <div className="flex items-center gap-4 mt-2">
-                      <input
-                        type="range"
-                        min="0"
-                        max="50"
-                        step="1"
-                        value={contextSize}
-                        onChange={(e) => setContextSize(parseInt(e.target.value))}
-                        className="w-full accent-amber-500 h-1.5 bg-white/5 rounded-lg appearance-none cursor-pointer"
-                      />
-                      <span className="text-[13px] text-zinc-500 shrink-0 w-6 text-right">{contextSize}</span>
-                    </div>
-                  </div>
-                </div>
-              </section>
-
-              {/* Language & Voice */}
-              <section>
-                <h2 className="text-[13px] uppercase tracking-wide text-zinc-500 font-medium px-4 mb-2">Speech & Language</h2>
-                <div className="bg-[#1C1C1E] rounded-[20px] overflow-hidden divide-y divide-white/5">
-                  <div className="p-4 flex items-center justify-between">
-                    <span className="text-[15px] text-white">Language</span>
-                    <select
-                      value={authLanguage}
-                      onChange={(e) => { onSetLanguage(e.target.value); try { localStorage.setItem('beatrice_language', e.target.value); } catch {} }}
-                      className="bg-transparent text-[15px] text-zinc-400 outline-none text-right cursor-pointer"
-                    >
-                      {LANGUAGES.map(l => (
-                        <option key={l.code} value={l.code} className="bg-[#1C1C1E] text-white">{l.label}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="p-4 flex flex-col gap-3">
-                    <span className="text-[15px] text-white mb-1">Agent Voice</span>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {VOICE_ALIASES.map(v => (
-                        <button
-                          key={v.id}
-                          onClick={() => setSelectedVoice(v.id)}
-                          className={`flex items-center justify-between px-4 py-3 rounded-xl transition-all ${selectedVoice === v.id ? 'bg-amber-500/10 text-amber-500 font-medium' : 'bg-white/5 text-zinc-400'}`}
-                        >
-                          <span>{v.name}</span>
-                          {selectedVoice === v.id && <Check className="w-4 h-4" />}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </section>
+              <WhatsAppSettings userId={user.uid} />
 
               {/* Admin Portal & Save */}
               <section className="space-y-3">

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Upload, Trash2, Link, Globe, User, Mail, Check, Loader2, FileText, AlertCircle, LogOut } from 'lucide-react';
+import { Loader2, Power, Check, Settings, X, Save, Activity, Video, MessageSquare, Globe, User, Mail, FileText, AlertCircle, LogOut, Upload, Trash2 } from 'lucide-react';
 import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
 import { supabase } from '../lib/supabase';
@@ -11,10 +11,171 @@ import {
   deleteKnowledgeFile,
   updateKnowledgeDomains,
 } from '../lib/supabaseStorage';
-import { startWhatsAppPairing, getWhatsAppStatus, disconnectWhatsApp } from '../lib/whatsappClient';
+
+const LANGUAGES = [
+  { code: 'en', label: 'English' },
+  { code: 'nl-BE', label: 'Dutch (Belgium) / Vlaams' },
+  { code: 'af', label: 'Afrikaans' },
+  { code: 'sq', label: 'Albanian' },
+  { code: 'am', label: 'Amharic' },
+  { code: 'ar', label: 'Arabic' },
+  { code: 'hy', label: 'Armenian' },
+  { code: 'as', label: 'Assamese' },
+  { code: 'ay', label: 'Aymara' },
+  { code: 'az', label: 'Azerbaijani' },
+  { code: 'bm', label: 'Bambara' },
+  { code: 'eu', label: 'Basque' },
+  { code: 'be', label: 'Belarusian' },
+  { code: 'bn', label: 'Bengali' },
+  { code: 'bho', label: 'Bhojpuri' },
+  { code: 'bs', label: 'Bosnian' },
+  { code: 'br', label: 'Breton' },
+  { code: 'bg', label: 'Bulgarian' },
+  { code: 'my', label: 'Burmese' },
+  { code: 'ca', label: 'Catalan' },
+  { code: 'ceb', label: 'Cebuano' },
+  { code: 'zh', label: 'Chinese (Simplified)' },
+  { code: 'zh-TW', label: 'Chinese (Traditional)' },
+  { code: 'co', label: 'Corsican' },
+  { code: 'hr', label: 'Croatian' },
+  { code: 'cs', label: 'Czech' },
+  { code: 'da', label: 'Danish' },
+  { code: 'dv', label: 'Divehi' },
+  { code: 'nl', label: 'Dutch' },
+  { code: 'eo', label: 'Esperanto' },
+  { code: 'et', label: 'Estonian' },
+  { code: 'ee', label: 'Ewe' },
+  { code: 'fi', label: 'Finnish' },
+  { code: 'fr', label: 'French' },
+  { code: 'gl', label: 'Galician' },
+  { code: 'lg', label: 'Ganda' },
+  { code: 'ka', label: 'Georgian' },
+  { code: 'de', label: 'German' },
+  { code: 'el', label: 'Greek' },
+  { code: 'gn', label: 'Guarani' },
+  { code: 'gu', label: 'Gujarati' },
+  { code: 'ht', label: 'Haitian Creole' },
+  { code: 'ha', label: 'Hausa' },
+  { code: 'haw', label: 'Hawaiian' },
+  { code: 'iw', label: 'Hebrew' },
+  { code: 'hi', label: 'Hindi' },
+  { code: 'hmn', label: 'Hmong' },
+  { code: 'hu', label: 'Hungarian' },
+  { code: 'is', label: 'Icelandic' },
+  { code: 'ig', label: 'Igbo' },
+  { code: 'id', label: 'Indonesian' },
+  { code: 'ga', label: 'Irish' },
+  { code: 'it', label: 'Italian' },
+  { code: 'ja', label: 'Japanese' },
+  { code: 'jv', label: 'Javanese' },
+  { code: 'kn', label: 'Kannada' },
+  { code: 'kk', label: 'Kazakh' },
+  { code: 'km', label: 'Khmer' },
+  { code: 'rw', label: 'Kinyarwanda' },
+  { code: 'ko', label: 'Korean' },
+  { code: 'kri', label: 'Krio' },
+  { code: 'ku', label: 'Kurdish' },
+  { code: 'ky', label: 'Kyrgyz' },
+  { code: 'lo', label: 'Lao' },
+  { code: 'la', label: 'Latin' },
+  { code: 'lv', label: 'Latvian' },
+  { code: 'ln', label: 'Lingala' },
+  { code: 'lt', label: 'Lithuanian' },
+  { code: 'mk', label: 'Macedonian' },
+  { code: 'mg', label: 'Malagasy' },
+  { code: 'ms', label: 'Malay' },
+  { code: 'ml', label: 'Malayalam' },
+  { code: 'mt', label: 'Maltese' },
+  { code: 'mi', label: 'Maori' },
+  { code: 'mr', label: 'Marathi' },
+  { code: 'mni', label: 'Meiteilon (Manipuri)' },
+  { code: 'mn', label: 'Mongolian' },
+  { code: 'ne', label: 'Nepali' },
+  { code: 'nso', label: 'Northern Sotho' },
+  { code: 'no', label: 'Norwegian' },
+  { code: 'nb', label: 'Norwegian Bokmål' },
+  { code: 'nn', label: 'Norwegian Nynorsk' },
+  { code: 'oc', label: 'Occitan' },
+  { code: 'or', label: 'Odia (Oriya)' },
+  { code: 'om', label: 'Oromo' },
+  { code: 'ps', label: 'Pashto' },
+  { code: 'fa', label: 'Persian' },
+  { code: 'pl', label: 'Polish' },
+  { code: 'pt', label: 'Portuguese' },
+  { code: 'pt-BR', label: 'Portuguese (Brazil)' },
+  { code: 'pa', label: 'Punjabi' },
+  { code: 'qu', label: 'Quechua' },
+  { code: 'ro', label: 'Romanian' },
+  { code: 'rm', label: 'Romansh' },
+  { code: 'rn', label: 'Rundi' },
+  { code: 'ru', label: 'Russian' },
+  { code: 'sm', label: 'Samoan' },
+  { code: 'sg', label: 'Sango' },
+  { code: 'sa', label: 'Sanskrit' },
+  { code: 'gd', label: 'Scottish Gaelic' },
+  { code: 'sr', label: 'Serbian' },
+  { code: 'st', label: 'Sesotho' },
+  { code: 'sn', label: 'Shona' },
+  { code: 'sd', label: 'Sindhi' },
+  { code: 'si', label: 'Sinhala' },
+  { code: 'sk', label: 'Slovak' },
+  { code: 'sl', label: 'Slovenian' },
+  { code: 'so', label: 'Somali' },
+  { code: 'es', label: 'Spanish' },
+  { code: 'su', label: 'Sundanese' },
+  { code: 'sw', label: 'Swahili' },
+  { code: 'ss', label: 'Swati' },
+  { code: 'sv', label: 'Swedish' },
+  { code: 'tl', label: 'Tagalog' },
+  { code: 'ty', label: 'Tahitian' },
+  { code: 'tg', label: 'Tajik' },
+  { code: 'ta', label: 'Tamil' },
+  { code: 'tt', label: 'Tatar' },
+  { code: 'te', label: 'Telugu' },
+  { code: 'th', label: 'Thai' },
+  { code: 'bo', label: 'Tibetan' },
+  { code: 'ti', label: 'Tigrinya' },
+  { code: 'ts', label: 'Tsonga' },
+  { code: 'tn', label: 'Tswana' },
+  { code: 'tr', label: 'Turkish' },
+  { code: 'tk', label: 'Turkmen' },
+  { code: 'uk', label: 'Ukrainian' },
+  { code: 'ur', label: 'Urdu' },
+  { code: 'ug', label: 'Uyghur' },
+  { code: 'uz', label: 'Uzbek' },
+  { code: 'vi', label: 'Vietnamese' },
+  { code: 'cy', label: 'Welsh' },
+  { code: 'fy', label: 'Western Frisian' },
+  { code: 'xh', label: 'Xhosa' },
+  { code: 'yi', label: 'Yiddish' },
+  { code: 'yo', label: 'Yoruba' },
+  { code: 'zu', label: 'Zulu' },
+];
+
+const VOICE_ALIASES = [
+  { id: 'Aoede', name: 'Aoede (Female, Warm, Engaging)' },
+  { id: 'Charon', name: 'Charon (Male, Authoritative)' },
+  { id: 'Fenrir', name: 'Fenrir (Male, Deep, Commanding)' },
+  { id: 'Kore', name: 'Kore (Female, Calm, Gentle)' },
+  { id: 'Puck', name: 'Puck (Male, Bright, Playful)' },
+];
 
 interface ProfilePageProps {
   onClose: () => void;
+  personaName: string;
+  setPersonaName: (v: string) => void;
+  customPrompt: string;
+  setCustomPrompt: (v: string) => void;
+  userTitle: string;
+  setUserTitle: (v: string) => void;
+  contextSize: number;
+  setContextSize: (v: number) => void;
+  authLanguage: string;
+  onSetLanguage: (v: string) => void;
+  selectedVoice: string;
+  setSelectedVoice: (v: string) => void;
+  saveSettings: () => Promise<void>;
+  isSaving: boolean;
 }
 
 const LS_KEY = 'beatrice_knowledge_domains';
@@ -34,7 +195,23 @@ function saveLocalDomains(domains: string[]) {
   } catch {}
 }
 
-export function ProfilePage({ onClose }: ProfilePageProps) {
+export function ProfilePage({ 
+  onClose,
+  personaName,
+  setPersonaName,
+  customPrompt,
+  setCustomPrompt,
+  userTitle,
+  setUserTitle,
+  contextSize,
+  setContextSize,
+  authLanguage,
+  onSetLanguage,
+  selectedVoice,
+  setSelectedVoice,
+  saveSettings,
+  isSaving
+}: ProfilePageProps) {
   const user = auth.currentUser!;
   const isGoogleConnected = user.providerData.some(p => p.providerId === 'google.com');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -52,28 +229,15 @@ export function ProfilePage({ onClose }: ProfilePageProps) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const [waStatus, setWaStatus] = useState<string>('not_found');
-  const [waQrCode, setWaQrCode] = useState<string | null>(null);
-  const [waPhone, setWaPhone] = useState<string | null>(null);
-  const [waPermissions, setWaPermissions] = useState<Record<string, boolean>>({
-    send_messages: false, read_chats: false, access_contacts: false, manage_contacts: false,
-    access_groups: false, send_group_messages: false, read_group_chats: false, view_message_history: false
-  });
-  const [waPairing, setWaPairing] = useState(false);
-  const waPollRef = useRef<any>(null);
-
   useEffect(() => {
     loadProfile();
-    return () => {
-      if (waPollRef.current) clearInterval(waPollRef.current);
-    };
   }, []);
 
   const loadProfile = async () => {
     try {
       const { data: settings } = await supabase
         .from('user_settings')
-        .select('avatar_url, knowledge_domains, whatsapp_permissions, whatsapp_paired, whatsapp_phone')
+        .select('avatar_url, knowledge_domains')
         .eq('user_id', user.uid)
         .single();
       if (settings) {
@@ -82,9 +246,6 @@ export function ProfilePage({ onClose }: ProfilePageProps) {
           setDomains(settings.knowledge_domains);
           saveLocalDomains(settings.knowledge_domains);
         }
-        if (settings.whatsapp_permissions) setWaPermissions(prev => ({ ...prev, ...settings.whatsapp_permissions }));
-        if (settings.whatsapp_paired) setWaStatus('paired');
-        if (settings.whatsapp_phone) setWaPhone(settings.whatsapp_phone);
       }
       const files = await listKnowledgeFiles(user.uid);
       setKnowledgeFiles(files);
@@ -182,21 +343,7 @@ export function ProfilePage({ onClose }: ProfilePageProps) {
     }
   };
 
-  const toggleWaPermission = async (key: string) => {
-    const nextPermissions = { ...waPermissions, [key]: !waPermissions[key] };
-    setWaPermissions(nextPermissions);
-    try {
-      await supabase.from('user_settings').upsert({
-        user_id: user.uid,
-        whatsapp_permissions: nextPermissions,
-        whatsapp_paired: waStatus === 'paired',
-        whatsapp_phone: waPhone || null,
-        updated_at: new Date().toISOString()
-      });
-    } catch (error) {
-      console.error('Failed to save WhatsApp permissions:', error);
-    }
-  };
+
 
   const formatSize = (bytes: number): string => {
     if (bytes < 1024) return `${bytes} B`;
@@ -402,108 +549,100 @@ export function ProfilePage({ onClose }: ProfilePageProps) {
           </button>
         </section>
 
-        {/* WhatsApp Integration */}
+        {/* Persona Settings */}
         <section>
-          <div className="px-4 mb-2 flex items-baseline justify-between">
-            <h2 className="text-[13px] uppercase tracking-wide text-zinc-500 font-medium">WhatsApp</h2>
-          </div>
-          <div className="bg-[#1C1C1E] rounded-[20px] overflow-hidden">
-            <div className="p-4 flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${waStatus === 'paired' ? 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]' : waStatus === 'qr_ready' || waStatus === 'init' ? 'bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.5)]' : 'bg-zinc-600'}`} />
-                  <span className={`text-[13px] font-semibold uppercase tracking-wider ${waStatus === 'paired' ? 'text-emerald-500' : waStatus === 'qr_ready' || waStatus === 'init' ? 'text-amber-500' : 'text-zinc-500'}`}>
-                    {waStatus === 'paired' ? `Connected${waPhone ? ` (${waPhone})` : ''}` : waStatus === 'qr_ready' ? 'Scan QR code' : waStatus === 'init' ? 'Connecting...' : 'Not connected'}
-                  </span>
-                </div>
-                {waStatus === 'paired' ? (
-                  <button
-                    onClick={async () => {
-                      await disconnectWhatsApp(user.uid);
-                      setWaStatus('not_found');
-                      setWaPhone(null);
-                      setWaQrCode(null);
-                      await supabase.from('user_settings').upsert({ user_id: user.uid, whatsapp_paired: false, whatsapp_phone: null, whatsapp_permissions: waPermissions, updated_at: new Date().toISOString() });
-                    }}
-                    className="px-3 py-1.5 bg-red-500/10 active:bg-red-500/20 rounded-full text-[13px] font-semibold text-red-500 transition-colors"
-                  >
-                    Disconnect
-                  </button>
-                ) : (
-                  <button
-                    onClick={async () => {
-                      setWaPairing(true);
-                      try {
-                        await startWhatsAppPairing(user.uid);
-                        setWaStatus('init');
-                        waPollRef.current = setInterval(async () => {
-                          try {
-                            const s = await getWhatsAppStatus(user.uid);
-                            setWaStatus(s.status);
-                            if (s.qrCode) setWaQrCode(s.qrCode);
-                            if (s.phone) setWaPhone(s.phone);
-                            if (s.status === 'paired' || s.status === 'disconnected' || s.error) {
-                              if (s.status === 'paired') {
-                                await supabase.from('user_settings').upsert({ user_id: user.uid, whatsapp_paired: true, whatsapp_phone: s.phone || null, whatsapp_permissions: waPermissions, updated_at: new Date().toISOString() });
-                              }
-                              if (waPollRef.current) clearInterval(waPollRef.current);
-                              waPollRef.current = null;
-                              setWaPairing(false);
-                            }
-                          } catch {
-                            if (waPollRef.current) clearInterval(waPollRef.current);
-                            waPollRef.current = null;
-                            setWaPairing(false);
-                          }
-                        }, 1500);
-                      } catch (e: any) {
-                        setWaPairing(false);
-                        if (waPollRef.current) clearInterval(waPollRef.current);
-                      }
-                    }}
-                    disabled={waPairing}
-                    className="px-3 py-1.5 bg-white/10 active:bg-white/20 rounded-full text-[13px] font-semibold text-white transition-colors disabled:opacity-50"
-                  >
-                    {waPairing ? 'Pairing...' : 'Pair'}
-                  </button>
-                )}
-              </div>
-
-              {waQrCode && waStatus === 'qr_ready' && (
-                <div className="flex flex-col items-center pt-4 border-t border-white/5">
-                  <img src={waQrCode} alt="WhatsApp QR" className="w-48 h-48 rounded-[16px] bg-white p-3 mb-2" />
-                  <p className="text-[13px] text-zinc-500 text-center">Open WhatsApp &gt; Linked Devices &gt; Link a Device</p>
-                  <button onClick={() => { setWaQrCode(null); setWaStatus('not_found'); }} className="text-[15px] font-semibold text-red-500 mt-2 p-2 active:opacity-70">Cancel</button>
-                </div>
-              )}
+          <h2 className="text-[13px] uppercase tracking-wide text-zinc-500 font-medium px-4 mb-2">Persona Configuration</h2>
+          <div className="bg-[#1C1C1E] rounded-[20px] overflow-hidden divide-y divide-white/5">
+            <div className="p-4 flex flex-col gap-1">
+              <label className="text-[13px] text-zinc-500">Persona Name</label>
+              <input
+                type="text"
+                value={personaName}
+                onChange={(e) => setPersonaName(e.target.value)}
+                placeholder="e.g. Beatrice"
+                className="bg-transparent text-[15px] text-white focus:outline-none"
+              />
             </div>
+            <div className="p-4 flex flex-col gap-1">
+              <label className="text-[13px] text-zinc-500">System Prompt Context</label>
+              <textarea
+                value={customPrompt}
+                onChange={(e) => setCustomPrompt(e.target.value)}
+                placeholder="Enter character traits or specific rules..."
+                className="bg-transparent text-[15px] text-white focus:outline-none h-24 resize-none leading-relaxed"
+              />
+            </div>
+            <div className="p-4 flex flex-col gap-1">
+              <label className="text-[13px] text-zinc-500">What Should Beatrice Call You?</label>
+              <input
+                type="text"
+                value={userTitle}
+                onChange={(e) => setUserTitle(e.target.value)}
+                placeholder="e.g. Boss"
+                className="bg-transparent text-[15px] text-white focus:outline-none"
+              />
+            </div>
+            <div className="p-4 flex flex-col gap-1">
+              <label className="text-[13px] text-zinc-500">Conversation Context (Messages)</label>
+              <div className="flex items-center gap-4 mt-2">
+                <input
+                  type="range"
+                  min="0"
+                  max="50"
+                  step="1"
+                  value={contextSize}
+                  onChange={(e) => setContextSize(parseInt(e.target.value))}
+                  className="w-full accent-amber-500 h-1.5 bg-white/5 rounded-lg appearance-none cursor-pointer"
+                />
+                <span className="text-[13px] text-zinc-500 shrink-0 w-6 text-right">{contextSize}</span>
+              </div>
+            </div>
+          </div>
+        </section>
 
-            {waStatus === 'paired' && (
-              <div className="border-t border-white/5">
-                {[
-                  { key: 'send_messages', label: 'Send Messages' },
-                  { key: 'read_chats', label: 'Read Chats' },
-                  { key: 'access_contacts', label: 'Access Contacts' },
-                  { key: 'manage_contacts', label: 'Manage Contacts' },
-                  { key: 'access_groups', label: 'Access Groups' },
-                  { key: 'send_group_messages', label: 'Send Group Messages' },
-                  { key: 'read_group_chats', label: 'Read Group Chats' },
-                  { key: 'view_message_history', label: 'View Message History' },
-                ].map((p, i, arr) => (
-                  <div key={p.key} className={`p-3 flex items-center justify-between ${i !== arr.length - 1 ? 'border-b border-white/5' : ''}`}>
-                    <span className="text-[15px] text-white">{p.label}</span>
-                    <button
-                      onClick={() => toggleWaPermission(p.key)}
-                      aria-pressed={waPermissions[p.key] ? 'true' : 'false'}
-                      className={`w-11 h-6 rounded-full transition-all flex items-center ${waPermissions[p.key] ? 'bg-emerald-500' : 'bg-zinc-700'}`}
-                    >
-                      <span className={`block w-5 h-5 rounded-full bg-white transition-all shadow-sm ${waPermissions[p.key] ? 'ml-5' : 'ml-[2px]'}`} />
-                    </button>
-                  </div>
+        {/* Language & Voice */}
+        <section>
+          <h2 className="text-[13px] uppercase tracking-wide text-zinc-500 font-medium px-4 mb-2">Speech & Language</h2>
+          <div className="bg-[#1C1C1E] rounded-[20px] overflow-hidden divide-y divide-white/5">
+            <div className="p-4 flex items-center justify-between">
+              <span className="text-[15px] text-white">Language</span>
+              <select
+                value={authLanguage}
+                onChange={(e) => { onSetLanguage(e.target.value); try { localStorage.setItem('beatrice_language', e.target.value); } catch {} }}
+                className="bg-transparent text-[15px] text-zinc-400 outline-none text-right cursor-pointer"
+              >
+                {LANGUAGES.map(l => (
+                  <option key={l.code} value={l.code} className="bg-[#1C1C1E] text-white">{l.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="p-4 flex flex-col gap-3">
+              <span className="text-[15px] text-white mb-1">Agent Voice</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {VOICE_ALIASES.map(v => (
+                  <button
+                    key={v.id}
+                    onClick={() => setSelectedVoice(v.id)}
+                    className={`flex items-center justify-between px-4 py-3 rounded-xl transition-all ${selectedVoice === v.id ? 'bg-amber-500/10 text-amber-500 font-medium' : 'bg-white/5 text-zinc-400'}`}
+                  >
+                    <span>{v.name}</span>
+                    {selectedVoice === v.id && <Check className="w-4 h-4" />}
+                  </button>
                 ))}
               </div>
-            )}
+            </div>
           </div>
+        </section>
+
+        <section className="space-y-3">
+          <button
+            onClick={saveSettings}
+            disabled={isSaving}
+            className="w-full p-4 bg-amber-500 rounded-[20px] text-center active:bg-amber-400 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {isSaving ? <Loader2 className="w-5 h-5 animate-spin text-black" /> : <Save className="w-5 h-5 text-black" />}
+            <span className="text-[15px] font-bold text-black">Save Settings</span>
+          </button>
         </section>
 
         {/* Logout Section */}
