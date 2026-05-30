@@ -3106,7 +3106,7 @@ ${historyContext}
               </div>
             ) : (
               <>
-                <Power className="w-5 h-5 sm:w-7 sm:h-7" />
+                <Power className="w-7 h-7 sm:w-9 sm:h-9" />
                 <span className="text-[7px] sm:text-[9px] font-extrabold uppercase tracking-widest mt-0.5 sm:mt-1">
                   Start
                 </span>
