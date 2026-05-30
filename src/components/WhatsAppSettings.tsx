@@ -27,6 +27,31 @@ export function WhatsAppSettings({ userId }: WhatsAppSettingsProps) {
     };
   }, []);
 
+  const startPolling = () => {
+    if (waPollRef.current) clearInterval(waPollRef.current);
+    waPollRef.current = setInterval(async () => {
+      try {
+        const s = await getWhatsAppStatus(userId);
+        setWaStatus(s.status);
+        if (s.qrCode) setWaQrCode(s.qrCode);
+        if (s.phone) setWaPhone(s.phone);
+        if (s.pairingCode) setWaPairingCode(s.pairingCode);
+        if (s.status === 'paired' || s.status === 'disconnected' || s.error) {
+          if (s.status === 'paired') {
+            await supabase.from('user_settings').upsert({ user_id: userId, whatsapp_paired: true, whatsapp_phone: s.phone || null, whatsapp_permissions: waPermissions, updated_at: new Date().toISOString() });
+          }
+          if (waPollRef.current) clearInterval(waPollRef.current);
+          waPollRef.current = null;
+          setWaPairing(false);
+        }
+      } catch {
+        if (waPollRef.current) clearInterval(waPollRef.current);
+        waPollRef.current = null;
+        setWaPairing(false);
+      }
+    }, 1500);
+  };
+
   const loadStatus = async () => {
     try {
       const { data: settings } = await supabase
@@ -36,8 +61,17 @@ export function WhatsAppSettings({ userId }: WhatsAppSettingsProps) {
         .single();
       if (settings) {
         if (settings.whatsapp_permissions) setWaPermissions(prev => ({ ...prev, ...settings.whatsapp_permissions }));
-        if (settings.whatsapp_paired) setWaStatus('paired');
-        if (settings.whatsapp_phone) setWaPhone(settings.whatsapp_phone);
+      }
+
+      const s = await getWhatsAppStatus(userId);
+      setWaStatus(s.status);
+      if (s.qrCode) setWaQrCode(s.qrCode);
+      if (s.phone) setWaPhone(s.phone);
+      if (s.pairingCode) setWaPairingCode(s.pairingCode);
+
+      if (s.status === 'qr_ready' || s.status === 'init') {
+        setWaPairing(true);
+        startPolling();
       }
     } catch (e) {
       console.error('Failed to load whatsapp settings:', e);
@@ -99,27 +133,7 @@ export function WhatsAppSettings({ userId }: WhatsAppSettingsProps) {
                     setWaStatus('init');
                     setWaPairingCode(null);
                     setWaQrCode(null);
-                    waPollRef.current = setInterval(async () => {
-                      try {
-                        const s = await getWhatsAppStatus(userId);
-                        setWaStatus(s.status);
-                        if (s.qrCode) setWaQrCode(s.qrCode);
-                        if (s.phone) setWaPhone(s.phone);
-                        if (s.pairingCode) setWaPairingCode(s.pairingCode);
-                        if (s.status === 'paired' || s.status === 'disconnected' || s.error) {
-                          if (s.status === 'paired') {
-                            await supabase.from('user_settings').upsert({ user_id: userId, whatsapp_paired: true, whatsapp_phone: s.phone || null, whatsapp_permissions: waPermissions, updated_at: new Date().toISOString() });
-                          }
-                          if (waPollRef.current) clearInterval(waPollRef.current);
-                          waPollRef.current = null;
-                          setWaPairing(false);
-                        }
-                      } catch {
-                        if (waPollRef.current) clearInterval(waPollRef.current);
-                        waPollRef.current = null;
-                        setWaPairing(false);
-                      }
-                    }, 1500);
+                    startPolling();
                   } catch (e: any) {
                     setWaPairing(false);
                     if (waPollRef.current) clearInterval(waPollRef.current);
@@ -133,21 +147,23 @@ export function WhatsAppSettings({ userId }: WhatsAppSettingsProps) {
             )}
           </div>
 
-          {waStatus !== 'paired' && !waPairing && waStatus !== 'qr_ready' && waStatus !== 'init' && (
+          {waStatus !== 'paired' && (
             <div className="flex flex-col gap-3 pt-3 border-t border-white/5">
               <label className="text-[12px] uppercase tracking-wider text-zinc-500 font-semibold mb-1">Pairing Option</label>
               <div className="grid grid-cols-2 gap-2 bg-black/40 p-1 rounded-xl">
                 <button
                   type="button"
                   onClick={() => setPairingMethod('qr')}
-                  className={`py-1.5 rounded-lg text-xs font-semibold transition-all ${pairingMethod === 'qr' ? 'bg-[#2C2C2E] text-white shadow-sm' : 'text-zinc-400 hover:text-zinc-200'}`}
+                  disabled={waPairing}
+                  className={`py-1.5 rounded-lg text-xs font-semibold transition-all ${pairingMethod === 'qr' ? 'bg-[#2C2C2E] text-white shadow-sm' : 'text-zinc-400 hover:text-zinc-200'} disabled:opacity-50`}
                 >
                   Scan QR Code
                 </button>
                 <button
                   type="button"
                   onClick={() => setPairingMethod('phone')}
-                  className={`py-1.5 rounded-lg text-xs font-semibold transition-all ${pairingMethod === 'phone' ? 'bg-[#2C2C2E] text-white shadow-sm' : 'text-zinc-400 hover:text-zinc-200'}`}
+                  disabled={waPairing}
+                  className={`py-1.5 rounded-lg text-xs font-semibold transition-all ${pairingMethod === 'phone' ? 'bg-[#2C2C2E] text-white shadow-sm' : 'text-zinc-400 hover:text-zinc-200'} disabled:opacity-50`}
                 >
                   Use Phone Number
                 </button>
@@ -160,9 +176,10 @@ export function WhatsAppSettings({ userId }: WhatsAppSettingsProps) {
                     id="wa-phone-input"
                     type="text"
                     value={phoneInput}
+                    disabled={waPairing}
                     onChange={(e) => setPhoneInput(e.target.value)}
                     placeholder="e.g. +31 6 12345678"
-                    className="bg-[#2C2C2E] border border-white/5 rounded-lg px-3 py-2 text-[14px] text-white placeholder-zinc-500 focus:outline-none focus:border-amber-500/50"
+                    className="bg-[#2C2C2E] border border-white/5 rounded-lg px-3 py-2 text-[14px] text-white placeholder-zinc-500 focus:outline-none focus:border-amber-500/50 disabled:opacity-50"
                   />
                   <p className="text-[11px] text-zinc-500 leading-normal">
                     Enter the phone number registered on your WhatsApp app, including your country code (e.g. 31612345678).
@@ -172,11 +189,73 @@ export function WhatsAppSettings({ userId }: WhatsAppSettingsProps) {
             </div>
           )}
 
+          {waPairing && waStatus === 'init' && (
+            <div className="flex flex-col items-center pt-4 border-t border-white/5">
+              <div className="flex items-center gap-2 mb-2">
+                <svg className="animate-spin h-5 w-5 text-amber-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span className="text-[14px] text-zinc-400 font-medium">Connecting and generating pair...</span>
+              </div>
+              <p className="text-[12px] text-zinc-500 text-center max-w-xs mb-3">
+                Starting up WhatsApp session on VPS backend. This might take a few seconds...
+              </p>
+              <button
+                onClick={async () => {
+                  await disconnectWhatsApp(userId);
+                  setWaPairing(false);
+                  setWaStatus('not_found');
+                  setWaPairingCode(null);
+                  setWaQrCode(null);
+                  if (waPollRef.current) clearInterval(waPollRef.current);
+                }}
+                className="px-4 py-1.5 bg-red-500/10 active:bg-red-500/20 rounded-full text-[13px] font-semibold text-red-500 transition-colors"
+              >
+                Cancel Pairing
+              </button>
+            </div>
+          )}
+
+          {waStatus === 'error' && (
+            <div className="flex flex-col items-center pt-4 border-t border-white/5">
+              <span className="text-[13px] text-red-500 font-semibold mb-1">Pairing Failed</span>
+              <p className="text-[12px] text-zinc-500 text-center max-w-xs mb-3">
+                An error occurred during pairing. Please verify your phone number and network connection, then try again.
+              </p>
+              <button
+                onClick={async () => {
+                  await disconnectWhatsApp(userId);
+                  setWaStatus('not_found');
+                  setWaPairing(false);
+                  setWaPairingCode(null);
+                  setWaQrCode(null);
+                  if (waPollRef.current) clearInterval(waPollRef.current);
+                }}
+                className="px-4 py-1.5 bg-white/10 active:bg-white/20 rounded-full text-[13px] font-semibold text-white transition-colors"
+              >
+                Reset & Try Again
+              </button>
+            </div>
+          )}
+
           {waQrCode && waStatus === 'qr_ready' && (
             <div className="flex flex-col items-center pt-4 border-t border-white/5">
               <img src={waQrCode} alt="WhatsApp QR" className="w-48 h-48 rounded-[16px] bg-white p-3 mb-2" />
-              <p className="text-[13px] text-zinc-500 text-center">Open WhatsApp &gt; Linked Devices &gt; Link a Device</p>
-              <button onClick={async () => { await disconnectWhatsApp(userId); setWaQrCode(null); setWaStatus('not_found'); }} className="text-[15px] font-semibold text-red-500 mt-2 p-2 active:opacity-70">Cancel</button>
+              <p className="text-[13px] text-zinc-500 text-center font-medium">Open WhatsApp &gt; Linked Devices &gt; Link a Device</p>
+              <p className="text-[12px] text-zinc-500 text-center max-w-xs mb-3">Scan this QR code from your phone's WhatsApp application to pair.</p>
+              <button
+                onClick={async () => {
+                  await disconnectWhatsApp(userId);
+                  setWaQrCode(null);
+                  setWaStatus('not_found');
+                  setWaPairing(false);
+                  if (waPollRef.current) clearInterval(waPollRef.current);
+                }}
+                className="px-4 py-1.5 bg-red-500/10 active:bg-red-500/20 rounded-full text-[13px] font-semibold text-red-500 transition-colors"
+              >
+                Cancel Pairing
+              </button>
             </div>
           )}
 
@@ -189,10 +268,10 @@ export function WhatsAppSettings({ userId }: WhatsAppSettingsProps) {
                   </span>
                 ))}
               </div>
-              <p className="text-[13px] text-zinc-400 text-center max-w-xs mb-1">
+              <p className="text-[13px] text-zinc-400 text-center max-w-xs mb-1 font-medium">
                 Open WhatsApp &gt; Linked Devices &gt; Link a Device &gt; Link with phone number instead
               </p>
-              <p className="text-[12px] text-zinc-500 text-center">
+              <p className="text-[12px] text-zinc-500 text-center max-w-xs mb-3">
                 Enter the 8-character code shown above on your phone.
               </p>
               <button
@@ -200,12 +279,14 @@ export function WhatsAppSettings({ userId }: WhatsAppSettingsProps) {
                   await disconnectWhatsApp(userId);
                   setWaPairingCode(null);
                   setWaStatus('not_found');
+                  setWaPairing(false);
+                  if (waPollRef.current) clearInterval(waPollRef.current);
                 }}
-                className="text-[15px] font-semibold text-red-500 mt-2 p-2 active:opacity-70"
+                className="px-4 py-1.5 bg-red-500/10 active:bg-red-500/20 rounded-full text-[13px] font-semibold text-red-500 transition-colors"
                 aria-label="Cancel pairing"
                 title="Cancel pairing"
               >
-                Cancel
+                Cancel Pairing
               </button>
             </div>
           )}
