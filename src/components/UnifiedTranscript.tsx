@@ -35,10 +35,10 @@ export function UnifiedTranscript({ userText, modelText, userName, modelName }: 
             transition={{ duration: 0.2 }}
             className="flex flex-col items-center justify-end text-center w-full"
           >
-            <span className={`text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1 ${isModel ? 'text-[#d0a78b]' : 'text-gray-400'}`}>
+            <span className={`text-xs font-bold opacity-50 uppercase tracking-widest mb-1 ${isModel ? 'text-[#d0a78b]' : 'text-gray-400'}`}>
               {activeName}
             </span>
-            <p className={`text-sm sm:text-base md:text-lg font-medium leading-relaxed line-clamp-3 text-ellipsis overflow-hidden ${isModel ? 'text-[#d0a78b] drop-shadow-[0_0_15px_rgba(208,167,139,0.3)]' : 'text-gray-200 drop-shadow-md'}`}>
+            <p className={`text-base sm:text-lg md:text-xl font-medium leading-relaxed line-clamp-3 text-ellipsis overflow-hidden ${isModel ? 'text-[#d0a78b] drop-shadow-[0_0_15px_rgba(208,167,139,0.3)]' : 'text-gray-200 drop-shadow-md'}`}>
               {activeText}
             </p>
           </motion.div>

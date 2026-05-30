@@ -143,7 +143,7 @@ export function ChatPage({
           <h1 className="text-sm sm:text-base font-semibold tracking-wide text-[#d0a78b]">Conversations</h1>
           <div className="flex items-center gap-1.5 -mt-px">
             <div className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.6)] animate-pulse' : 'bg-zinc-600'}`} />
-            <span className="text-[8px] sm:text-[9px] text-zinc-500 tracking-wider uppercase">
+            <span className="text-xs text-zinc-500 tracking-wider uppercase">
               {isActive ? 'online' : 'offline'}
             </span>
           </div>
@@ -190,7 +190,7 @@ export function ChatPage({
               >
                 <div className={isMobile.current ? 'w-[280px] h-full flex flex-col' : 'w-[240px] h-full flex flex-col'}>
                   <div className="px-3 sm:px-4 py-2.5 sm:py-3 border-b border-zinc-800/40 flex items-center justify-between shrink-0">
-                    <h2 className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold">Sessions</h2>
+                    <h2 className="text-xs uppercase tracking-widest text-zinc-500 font-bold">Sessions</h2>
                     {isMobile.current && (
                       <button
                         onClick={() => setSidebarOpen(false)}
@@ -204,7 +204,7 @@ export function ChatPage({
                   </div>
                   <div className="flex-1 overflow-y-auto px-2 py-2 space-y-1">
                     {sessions.length === 0 && (
-                      <p className="text-[11px] text-zinc-600 text-center px-3 py-8">
+                      <p className="text-sm text-zinc-600 text-center px-3 py-8">
                         No conversations yet
                       </p>
                     )}
@@ -222,24 +222,24 @@ export function ChatPage({
                         }`}
                       >
                         <div className="flex items-center justify-between mb-1">
-                          <span className={`text-[10px] font-semibold uppercase tracking-wider ${
+                          <span className={`text-xs font-semibold uppercase tracking-wider ${
                             session.id === selectedSessionId ? 'text-[#d0a78b]' : 'text-zinc-400'
                           }`}>
                             {formatSessionDate(session.startTime)}
                           </span>
-                          <span className="text-[9px] text-zinc-600">
+                          <span className="text-xs text-zinc-600">
                             {session.count} msgs
                           </span>
                         </div>
-                        <p className="text-[11px] text-zinc-500 truncate leading-relaxed">
+                        <p className="text-sm text-zinc-500 truncate leading-relaxed">
                           {session.preview || 'Empty session'}
                         </p>
                         <div className="flex items-center gap-2 mt-1">
-                          <span className="text-[9px] text-zinc-600">
+                          <span className="text-xs text-zinc-600">
                             {session.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
                           {session.id === (messages.length > 0 ? messages[messages.length - 1]?.sessionId : null) && (
-                            <span className="text-[8px] uppercase tracking-widest text-emerald-500 font-bold">
+                            <span className="text-xs uppercase tracking-widest text-emerald-500 font-bold">
                               current
                             </span>
                           )}
@@ -269,7 +269,7 @@ export function ChatPage({
           {/* Session info bar */}
           {currentSession && (
             <div className="px-3 sm:px-4 py-1.5 sm:py-2 border-b border-zinc-800/40 bg-black/10 shrink-0">
-              <p className="text-[9px] sm:text-[10px] text-zinc-500 uppercase tracking-wider flex items-center gap-2">
+              <p className="text-xs text-zinc-500 uppercase tracking-wider flex items-center gap-2">
                 <span>{formatSessionDate(currentSession.startTime)}</span>
                 <span className="text-zinc-700">&middot;</span>
                 <span>{currentSession.count} messages</span>
@@ -322,14 +322,14 @@ export function ChatPage({
                     }`}
                   >
                     <div className="flex items-center gap-2 mb-1">
-                      <span className={`text-[9px] sm:text-[10px] font-semibold uppercase tracking-wider ${msg.role === 'user' ? 'text-[#d0a78b]' : 'text-zinc-400'}`}>
+                      <span className={`text-xs font-semibold uppercase tracking-wider ${msg.role === 'user' ? 'text-[#d0a78b]' : 'text-zinc-400'}`}>
                         {msg.role === 'user' ? userName : personaName}
                       </span>
-                      <span className="text-[8px] sm:text-[9px] text-zinc-600">
+                      <span className="text-xs text-zinc-600">
                         {formatTime(msg.timestamp)}
                       </span>
                     </div>
-                    <div className={`text-xs sm:text-sm leading-relaxed prose prose-invert prose-sm max-w-none ${msg.role === 'model' ? 'text-zinc-300' : ''}`}>
+                    <div className={`text-sm sm:text-base leading-relaxed prose prose-invert prose-sm max-w-none ${msg.role === 'model' ? 'text-zinc-300' : ''}`}>
                       {msg.role === 'model' ? (
                         <ReactMarkdown>{msg.text}</ReactMarkdown>
                       ) : (
