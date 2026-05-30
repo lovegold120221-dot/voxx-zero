@@ -4,7 +4,13 @@ export function getBackendUrl(): string {
   const envUrl = (typeof import.meta !== 'undefined' && ((import.meta as any).env?.VITE_BACKEND_URL || (import.meta as any).env?.VITE_SANDBOX_URL)) || '';
   try {
     const stored = localStorage.getItem(BACKEND_URL_KEY);
-    if (stored) return stored.replace(/\/+$/, '');
+    if (stored) {
+      const isStoredLocalhost = ['localhost', '127.0.0.1', '0.0.0.0'].some(h => stored.includes(h));
+      const isCurrentLocalhost = typeof window !== 'undefined' && ['localhost', '127.0.0.1', '0.0.0.0'].includes(window.location.hostname);
+      if (!isStoredLocalhost || isCurrentLocalhost) {
+        return stored.replace(/\/+$/, '');
+      }
+    }
   } catch {}
 
   if (envUrl) return envUrl.replace(/\/+$/, '');
