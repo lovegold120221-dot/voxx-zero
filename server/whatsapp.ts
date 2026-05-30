@@ -109,6 +109,7 @@ interface WaSession {
   messageById: Map<string, any>;
   reconnecting: boolean;
   saveTimer: NodeJS.Timeout | null;
+  reconnectTimer?: NodeJS.Timeout | null;
 }
 
 const logger = P({ level: process.env.WA_LOG_LEVEL || 'silent' });
@@ -243,170 +244,238 @@ export class WhatsAppManager {
     return { pairingCode: safeUserId(userId), status: this.sessions.get(userId)?.status || 'init' };
   }
 
+  private async reconnect(userId: string, attempt = 0) {
+    const entry = this.sessions.get(userId);
+    if (!entry) return; // User has disconnected/removed the session
+
+    // If it's already logged out, do not reconnect
+    if (entry.status === 'disconnected') return;
+
+    entry.reconnecting = true;
+    
+    // Calculate backoff delay: 2s, 5s, 10s, 30s, up to 60s max
+    const delays = [2000, 5000, 10000, 30000, 60000];
+    const delay = delays[Math.min(attempt, delays.length - 1)];
+
+    console.log(`[WhatsApp] Scheduling reconnection for ${userId} in ${delay}ms (attempt ${attempt + 1})`);
+
+    this.clearReconnectTimer(entry);
+
+    entry.reconnectTimer = setTimeout(async () => {
+      // Check again if the session is still active and unchanged
+      const currentEntry = this.sessions.get(userId);
+      if (currentEntry !== entry) return;
+
+      try {
+        console.log(`[WhatsApp] Attempting to reconnect session for ${userId}...`);
+        await this.startSession(userId);
+      } catch (error: any) {
+        console.error(`[WhatsApp] Reconnection attempt ${attempt + 1} failed for ${userId}:`, error.message);
+        
+        // Update status and error in the active session
+        const activeEntry = this.sessions.get(userId);
+        if (activeEntry === entry) {
+          activeEntry.status = 'error';
+          activeEntry.error = error.message || 'Reconnect failed';
+          // Trigger the next retry
+          this.reconnect(userId, attempt + 1);
+        }
+      }
+    }, delay);
+  }
+
   async startSession(userId: string, phoneNumber?: string): Promise<void> {
     const safeId = safeUserId(userId);
     const authDir = path.join(this.authRoot, safeId);
     const dataFile = path.join(authDir, 'session-data.json');
     ensureDir(authDir);
 
-    const current = this.sessions.get(userId);
-    if (current) {
-      this.clearSaveTimer(current);
+    let entry = this.sessions.get(userId);
+    if (entry) {
+      this.clearSaveTimer(entry);
+      this.clearReconnectTimer(entry);
       try {
-        current.sock?.end?.(undefined);
+        entry.sock?.end?.(undefined);
       } catch {}
+      
+      entry.status = 'init';
+      entry.sock = null;
+      entry.error = null;
+    } else {
+      const savedData = readSessionData(dataFile);
+      entry = {
+        userId,
+        status: 'init',
+        qrCode: null,
+        qrRaw: null,
+        pairingCode: null,
+        phone: null,
+        sock: null,
+        authDir,
+        dataFile,
+        error: null,
+        recentMessages: savedData.recentMessages,
+        contacts: savedData.contacts,
+        messageById: new Map(),
+        reconnecting: false,
+        saveTimer: null,
+        reconnectTimer: null,
+      };
+      this.sessions.set(userId, entry);
     }
 
-    const { state, saveCreds } = await useMultiFileAuthState(authDir);
-    const { version } = await fetchLatestBaileysVersion();
-    const savedData = readSessionData(dataFile);
+    try {
+      const { state, saveCreds } = await useMultiFileAuthState(authDir);
+      if (this.sessions.get(userId) !== entry) return;
 
-    const entry: WaSession = {
-      userId,
-      status: 'init',
-      qrCode: null,
-      qrRaw: null,
-      pairingCode: null,
-      phone: null,
-      sock: null,
-      authDir,
-      dataFile,
-      error: null,
-      recentMessages: savedData.recentMessages,
-      contacts: savedData.contacts,
-      messageById: new Map(),
-      reconnecting: false,
-      saveTimer: null,
-    };
-
-    this.sessions.set(userId, entry);
-
-    const sock = makeWASocket({
-      version,
-      logger,
-      auth: {
-        creds: state.creds,
-        keys: makeCacheableSignalKeyStore(state.keys, logger),
-      },
-      generateHighQualityLinkPreview: true,
-      markOnlineOnConnect: false,
-      syncFullHistory: false,
-      getMessage: async (key) => {
-        const jid = key.remoteJid;
-        const id = key.id;
-        if (!jid || !id) return undefined;
-        return entry.messageById.get(`${jid}:${id}`)?.message;
-      },
-    });
-
-    entry.sock = sock;
-
-    if (phoneNumber && !state.creds.registered) {
-      setTimeout(async () => {
-        try {
-          const cleaned = phoneNumber.replace(/\D/g, '');
-          console.log(`[Baileys] Requesting pairing code for phone number: ${cleaned}`);
-          const code = await sock.requestPairingCode(cleaned);
-          entry.pairingCode = code;
-          entry.status = 'qr_ready';
-          console.log(`[Baileys] Generated pairing code successfully: ${code}`);
-        } catch (err: any) {
-          console.error(`[Baileys] Failed to generate pairing code:`, err);
-          entry.error = err.message || 'Failed to request pairing code';
-          entry.status = 'error';
-        }
-      }, 1000);
-    }
-    entry.saveTimer = setInterval(() => {
+      let version: [number, number, number] = [2, 3000, 0];
       try {
-        writeSessionData(entry);
-      } catch (error) {
-        console.warn(`Failed to write WhatsApp data for ${userId}:`, error);
-      }
-    }, 10_000);
-
-    sock.ev.on('creds.update', saveCreds);
-
-    sock.ev.on('connection.update', async (update: any) => {
-      const { connection, lastDisconnect, qr } = update;
-
-      if (qr) {
-        entry.qrRaw = qr;
-        entry.qrCode = await QRCode.toDataURL(qr, { margin: 1, width: 320 });
-        entry.status = 'qr_ready';
-        entry.error = null;
+        const fetched = await fetchLatestBaileysVersion();
+        if (this.sessions.get(userId) !== entry) return;
+        version = fetched.version;
+      } catch (verErr: any) {
+        console.warn(`[WhatsApp] Failed to fetch latest Baileys version, using fallback:`, verErr.message);
       }
 
-      if (connection === 'open') {
-        entry.status = 'paired';
-        entry.qrCode = null;
-        entry.qrRaw = null;
-        entry.error = null;
-        entry.phone = sock.user?.id ? jidNumber(sock.user.id) : 'connected';
-        console.log(`WhatsApp paired for user ${userId}: ${entry.phone}`);
+      const sock = makeWASocket({
+        version,
+        logger,
+        auth: {
+          creds: state.creds,
+          keys: makeCacheableSignalKeyStore(state.keys, logger),
+        },
+        generateHighQualityLinkPreview: true,
+        markOnlineOnConnect: false,
+        syncFullHistory: false,
+        getMessage: async (key) => {
+          const jid = key.remoteJid;
+          const id = key.id;
+          if (!jid || !id) return undefined;
+          return entry!.messageById.get(`${jid}:${id}`)?.message;
+        },
+      });
+
+      entry.sock = sock;
+
+      if (phoneNumber && !state.creds.registered) {
+        setTimeout(async () => {
+          try {
+            const cleaned = phoneNumber.replace(/\D/g, '');
+            console.log(`[Baileys] Requesting pairing code for phone number: ${cleaned}`);
+            const code = await sock.requestPairingCode(cleaned);
+            if (this.sessions.get(userId) !== entry) return;
+            entry.pairingCode = code;
+            entry.status = 'qr_ready';
+            console.log(`[Baileys] Generated pairing code successfully: ${code}`);
+          } catch (err: any) {
+            console.error(`[Baileys] Failed to generate pairing code:`, err);
+            if (this.sessions.get(userId) !== entry) return;
+            entry.error = err.message || 'Failed to request pairing code';
+            entry.status = 'error';
+          }
+        }, 1000);
       }
 
-      if (connection === 'close') {
-        const statusCode = (lastDisconnect?.error as Boom | undefined)?.output?.statusCode;
-        const loggedOut = statusCode === DisconnectReason.loggedOut;
-        entry.status = loggedOut ? 'disconnected' : 'error';
-        entry.error = loggedOut ? null : (lastDisconnect?.error?.message || 'WhatsApp connection closed');
-        entry.sock = null;
-        this.clearSaveTimer(entry);
+      entry.saveTimer = setInterval(() => {
+        try {
+          if (entry && this.sessions.get(userId) === entry) {
+            writeSessionData(entry);
+          }
+        } catch (error) {
+          console.warn(`Failed to write WhatsApp data for ${userId}:`, error);
+        }
+      }, 10_000);
 
-        if (!loggedOut && !entry.reconnecting) {
-          entry.reconnecting = true;
-          setTimeout(async () => {
-            try {
-              await this.startSession(userId);
-            } catch (error: any) {
-              const current = this.sessions.get(userId);
-              if (current) {
-                current.status = 'error';
-                current.error = error.message || 'Reconnect failed';
-              }
-            }
-          }, 2_000);
+      sock.ev.on('creds.update', saveCreds);
+
+      sock.ev.on('connection.update', async (update: any) => {
+        const { connection, lastDisconnect, qr } = update;
+
+        if (this.sessions.get(userId) !== entry) return;
+
+        if (qr) {
+          entry.qrRaw = qr;
+          entry.qrCode = await QRCode.toDataURL(qr, { margin: 1, width: 320 });
+          entry.status = 'qr_ready';
+          entry.error = null;
+        }
+
+        if (connection === 'open') {
+          entry.status = 'paired';
+          entry.qrCode = null;
+          entry.qrRaw = null;
+          entry.error = null;
+          entry.phone = sock.user?.id ? jidNumber(sock.user.id) : 'connected';
+          console.log(`WhatsApp paired for user ${userId}: ${entry.phone}`);
+        }
+
+        if (connection === 'close') {
+          const statusCode = (lastDisconnect?.error as Boom | undefined)?.output?.statusCode;
+          const loggedOut = statusCode === DisconnectReason.loggedOut;
+          entry.status = loggedOut ? 'disconnected' : 'error';
+          entry.error = loggedOut ? null : (lastDisconnect?.error?.message || 'WhatsApp connection closed');
+          entry.sock = null;
+          this.clearSaveTimer(entry);
+
+          if (!loggedOut) {
+            this.reconnect(userId, 0);
+          }
+        }
+      });
+
+      sock.ev.on('messages.upsert', ({ messages }: any) => {
+        if (this.sessions.get(userId) !== entry) return;
+
+        for (const msg of messages || []) {
+          const chatId = msg.key?.remoteJid || '';
+          if (!chatId || chatId === 'status@broadcast') continue;
+          if (msg.key?.id) entry.messageById.set(`${chatId}:${msg.key.id}`, msg);
+
+          const body = messageText(msg) || '[media]';
+          const record: WaRecentMessage = {
+            id: msg.key?.id || `${chatId}:${Date.now()}`,
+            chatId,
+            from: msg.key?.participant || msg.key?.remoteJid || '',
+            body: body.slice(0, 1000),
+            timestamp: timestampMs(msg.messageTimestamp),
+            fromMe: !!msg.key?.fromMe,
+            isGroup: chatId.endsWith('@g.us'),
+            isMedia: !!msg.message?.imageMessage || !!msg.message?.videoMessage || !!msg.message?.documentMessage,
+          };
+          entry.recentMessages.unshift(record);
+        }
+        entry.recentMessages = entry.recentMessages.slice(0, 250);
+      });
+
+      const updateContacts = (contacts: any[]) => {
+        if (this.sessions.get(userId) !== entry) return;
+
+        for (const contact of contacts || []) {
+          const id = contact.id || contact.jid;
+          if (!id || !String(id).endsWith('@s.whatsapp.net')) continue;
+          entry.contacts[id] = {
+            id,
+            name: contact.name || contact.notify || contact.verifiedName || entry.contacts[id]?.name || id,
+            number: jidNumber(id),
+          };
+        }
+      };
+
+      sock.ev.on('contacts.upsert', updateContacts);
+      sock.ev.on('contacts.update', updateContacts);
+
+    } catch (err: any) {
+      console.error(`[WhatsApp] Failed to initialize session for ${userId}:`, err.message);
+      if (this.sessions.get(userId) === entry) {
+        entry.status = 'error';
+        entry.error = err.message || 'Failed to initialize WhatsApp session';
+        
+        const hasCreds = fs.existsSync(path.join(authDir, 'creds.json'));
+        if (hasCreds) {
+          this.reconnect(userId, 0);
         }
       }
-    });
-
-    sock.ev.on('messages.upsert', ({ messages }: any) => {
-      for (const msg of messages || []) {
-        const chatId = msg.key?.remoteJid || '';
-        if (!chatId || chatId === 'status@broadcast') continue;
-        if (msg.key?.id) entry.messageById.set(`${chatId}:${msg.key.id}`, msg);
-
-        const body = messageText(msg) || '[media]';
-        const record: WaRecentMessage = {
-          id: msg.key?.id || `${chatId}:${Date.now()}`,
-          chatId,
-          from: msg.key?.participant || msg.key?.remoteJid || '',
-          body: body.slice(0, 1000),
-          timestamp: timestampMs(msg.messageTimestamp),
-          fromMe: !!msg.key?.fromMe,
-          isGroup: chatId.endsWith('@g.us'),
-          isMedia: !!msg.message?.imageMessage || !!msg.message?.videoMessage || !!msg.message?.documentMessage,
-        };
-        entry.recentMessages.unshift(record);
-      }
-      entry.recentMessages = entry.recentMessages.slice(0, 250);
-    });
-
-    const updateContacts = (contacts: any[]) => {
-      for (const contact of contacts || []) {
-        const id = contact.id || contact.jid;
-        if (!id || !String(id).endsWith('@s.whatsapp.net')) continue;
-        entry.contacts[id] = {
-          id,
-          name: contact.name || contact.notify || contact.verifiedName || entry.contacts[id]?.name || id,
-          number: jidNumber(id),
-        };
-      }
-    };
-
-    sock.ev.on('contacts.upsert', updateContacts);
-    sock.ev.on('contacts.update', updateContacts);
+    }
   }
 
   async getStatusOrStart(userId: string): Promise<{ status: string; qrCode?: string; phone?: string; error?: string; pairingCode?: string } | null> {
@@ -656,6 +725,7 @@ export class WhatsAppManager {
     }
 
     this.clearSaveTimer(entry);
+    this.clearReconnectTimer(entry);
     this.sessions.delete(userId);
     fs.rmSync(entry.authDir, { recursive: true, force: true });
   }
@@ -673,6 +743,7 @@ export class WhatsAppManager {
   async shutdown(): Promise<void> {
     for (const entry of this.sessions.values()) {
       this.clearSaveTimer(entry);
+      this.clearReconnectTimer(entry);
       try {
         writeSessionData(entry);
         entry.sock?.end?.(undefined);
@@ -685,6 +756,13 @@ export class WhatsAppManager {
     if (entry.saveTimer) {
       clearInterval(entry.saveTimer);
       entry.saveTimer = null;
+    }
+  }
+
+  private clearReconnectTimer(entry: WaSession) {
+    if (entry.reconnectTimer) {
+      clearTimeout(entry.reconnectTimer);
+      entry.reconnectTimer = null;
     }
   }
 

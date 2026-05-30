@@ -3103,7 +3103,7 @@ ${historyContext}
                   <Loader2 className="w-7 h-7 sm:w-9 sm:h-9 animate-spin text-[#d0a78b] z-10" />
                 ) : isActive ? null : null}
               </div>
-            </button>
+            </motion.button>
           </div>
         </div>
 
