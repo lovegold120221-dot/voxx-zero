@@ -1337,6 +1337,21 @@ function MaximusAgent({
   const lastModelTurnCompleteAtRef = useRef(0);
   const isNewTurnRef = useRef(true);
 
+  // --- Conversation persistence for reconnection resilience ---
+  const conversationBufferRef = useRef<string[]>([]);
+  const reconnectAttemptsRef = useRef(0);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reconnectContextRef = useRef<string>('');
+  const MAX_RECONNECT_ATTEMPTS = 5;
+  const RECONNECT_BASE_DELAY_MS = 1000;
+  const [reconnecting, setReconnecting] = useState(false);
+
+  const buildConversationContext = useCallback(() => {
+    const buf = conversationBufferRef.current;
+    if (buf.length === 0) return '';
+    return 'PREVIOUS CONVERSATION (continue from here, do not repeat yourself):\n' + buf.join('\n');
+  }, []);
+
   isActiveRef.current = isActive;
   isAgentSpeakingRef.current = isAgentSpeaking;
 
@@ -2870,6 +2885,8 @@ ${historyContext}
                   markUserSpeechActivity();
                   userTranscriptRef.current = text;
                   setUserTranscript(text);
+                  // Buffer user speech for reconnection resilience
+                  conversationBufferRef.current.push(`USER: ${text}`);
                   saveMessage('user', text);
 
                   if (transcriptTimeoutRef.current) clearTimeout(transcriptTimeoutRef.current);
@@ -2954,6 +2971,8 @@ ${historyContext}
                 if (current) {
                   if (!isSilenceFillerTurn) {
                     setMessages(prev => [...prev, { role: 'model', text: current, timestamp: new Date().toISOString(), sessionId: sessionIdRef.current }]);
+                    // Buffer model speech for reconnection resilience
+                    conversationBufferRef.current.push(`ASSISTANT: ${current}`);
                     saveMessage('model', current);
                   }
                   modelTranscriptRef.current = '';
