@@ -31,7 +31,7 @@ export class AudioStreamer {
 
   getFrequencies(numBins: number = 5): number[] {
     if (!this.analyser || !this.dataArray) return Array(numBins).fill(0);
-    this.analyser.getByteFrequencyData(this.dataArray);
+    this.analyser.getByteFrequencyData(this.dataArray as any);
     const result = [];
     const step = Math.floor(this.dataArray.length / numBins);
     for (let i = 0; i < numBins; i++) {
@@ -266,7 +266,7 @@ export class AudioRecorder {
 
   getFrequencies(numBins: number = 5): number[] {
     if (!this.analyser || !this.dataArray) return Array(numBins).fill(0);
-    this.analyser.getByteFrequencyData(this.dataArray);
+    this.analyser.getByteFrequencyData(this.dataArray as any);
     const result = [];
     const step = Math.floor(this.dataArray.length / numBins);
     for (let i = 0; i < numBins; i++) {
