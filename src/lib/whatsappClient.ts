@@ -7,7 +7,12 @@ export function getBackendUrl(): string {
     if (stored) {
       const isStoredLocalhost = ['localhost', '127.0.0.1', '0.0.0.0'].some(h => stored.includes(h));
       const isCurrentLocalhost = typeof window !== 'undefined' && ['localhost', '127.0.0.1', '0.0.0.0'].includes(window.location.hostname);
-      if (!isStoredLocalhost || isCurrentLocalhost) {
+      const isCurrentHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+      const isStoredHttp = stored.startsWith('http://');
+
+      if (isCurrentHttps && isStoredHttp && !isStoredLocalhost) {
+        // Skip stored HTTP URL to avoid Mixed Content errors in HTTPS environment
+      } else if (!isStoredLocalhost || isCurrentLocalhost) {
         return stored.replace(/\/+$/, '');
       }
     }
