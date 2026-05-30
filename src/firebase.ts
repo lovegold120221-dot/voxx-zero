@@ -1,0 +1,17 @@
+import { initializeApp } from 'firebase/app';
+import { getAuth } from 'firebase/auth';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBL4fzS6NbiGzs-1N245faFx55gFGN8Hqo",
+  authDomain: "eburon-app.firebaseapp.com",
+  databaseURL: "https://eburon-app-default-rtdb.firebaseio.com",
+  projectId: "eburon-app",
+  storageBucket: "eburon-app.firebasestorage.app",
+  messagingSenderId: "624269487594",
+  appId: "1:624269487594:web:a13bce42eaa196f52e9693",
+  measurementId: "G-MCWGL1WRCM"
+};
+
+const app = initializeApp(firebaseConfig);
+export const auth = getAuth(app);
+

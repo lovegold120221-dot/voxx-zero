@@ -1,0 +1,22 @@
+{
+  "provider": "linked_device",
+  "displayName": "",
+  "businessAccountId": "",
+  "phoneNumberId": "",
+  "apiVersion": "v23.0",
+  "accessToken": "",
+  "appSecret": "",
+  "webhookVerifyToken": "",
+  "defaultCountryCode": "",
+  "permissions": {
+    "send_messages": true,
+    "read_chats": true,
+    "access_contacts": true,
+    "manage_contacts": true,
+    "access_groups": true,
+    "send_group_messages": true,
+    "read_group_chats": true,
+    "view_message_history": true
+  },
+  "updatedAt": "2026-05-30T03:20:48.107Z"
+}
