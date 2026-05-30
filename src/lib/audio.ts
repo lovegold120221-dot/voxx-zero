@@ -225,6 +225,9 @@ export class AudioRecorder {
       sampleRate: 16000
     });
     this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    
+    if (!this.audioContext) return;
+    
     const source = this.audioContext.createMediaStreamSource(this.stream);
     
     this.analyser = this.audioContext.createAnalyser();
