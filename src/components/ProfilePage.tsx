@@ -153,11 +153,11 @@ const LANGUAGES = [
 ];
 
 const VOICE_ALIASES = [
-  { id: 'Aoede', name: 'Aoede (Female, Warm, Engaging)' },
-  { id: 'Charon', name: 'Charon (Male, Authoritative)' },
-  { id: 'Fenrir', name: 'Fenrir (Male, Deep, Commanding)' },
-  { id: 'Kore', name: 'Kore (Female, Calm, Gentle)' },
-  { id: 'Puck', name: 'Puck (Male, Bright, Playful)' },
+  { id: 'Aoede', name: 'Wonder Woman' },
+  { id: 'Charon', name: 'Batman' },
+  { id: 'Fenrir', name: 'Wolverine' },
+  { id: 'Kore', name: 'Supergirl' },
+  { id: 'Puck', name: 'Spider-Man' },
 ];
 
 interface ProfilePageProps {
