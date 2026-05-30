@@ -17,4 +17,6 @@ COPY . .
 # Expose Vite port (3000) and API port (if any, typically 3001)
 EXPOSE 3000 3001
 
+USER node
+
 CMD ["npm", "run", "dev:full"]
