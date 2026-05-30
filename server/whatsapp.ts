@@ -207,6 +207,27 @@ export class WhatsAppManager {
   private sessions = new Map<string, WaSession>();
   private authRoot = process.env.WA_AUTH_ROOT || path.join(process.cwd(), '.baileys_auth');
 
+  async resumeExistingSessions(): Promise<void> {
+    if (!fs.existsSync(this.authRoot)) return;
+    try {
+      const dirs = fs.readdirSync(this.authRoot);
+      for (const dir of dirs) {
+        const fullPath = path.join(this.authRoot, dir);
+        if (fs.statSync(fullPath).isDirectory()) {
+          const credsFile = path.join(fullPath, 'creds.json');
+          if (fs.existsSync(credsFile)) {
+            console.log(`Resuming WhatsApp session: ${dir}`);
+            this.startSession(dir).catch((err: any) => {
+              console.error(`Failed to auto-resume session ${dir}:`, err.message);
+            });
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error resuming existing WhatsApp sessions:', error);
+    }
+  }
+
   async startPairing(userId: string): Promise<{ pairingCode: string; status: string }> {
     const existing = this.sessions.get(userId);
     if (existing && ['init', 'qr_ready', 'paired'].includes(existing.status)) {

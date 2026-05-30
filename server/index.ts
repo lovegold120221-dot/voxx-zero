@@ -11,6 +11,7 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
 const waManager = new WhatsAppManager();
+waManager.resumeExistingSessions();
 
 app.get('/', (_req, res) => {
   res.send('Beatrice Backend API Server is running. To open the application, visit http://localhost:3000');
