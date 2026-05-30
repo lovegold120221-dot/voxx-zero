@@ -19,7 +19,7 @@ import { AmbientConversationBed, AudioRecorder, AudioStreamer } from './lib/audi
 import { listKnowledgeFiles, fetchKnowledgeFileContent } from './lib/supabaseStorage';
 import { Loader2, Power, Check, Settings, X, Save, Activity, Video, MessageSquare } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { KaraokeTranscript } from './components/KaraokeTranscript';
+import { UnifiedTranscript } from './components/UnifiedTranscript';
 import { ChatPage } from './components/ChatPage';
 import { VideoPage } from './components/VideoPage';
 import { DocumentViewer } from './components/DocumentViewer';
@@ -3066,25 +3066,13 @@ ${historyContext}
         </div>
         </div>
 
-        <div className="w-full max-w-xl px-2 sm:px-8 flex flex-col items-center justify-center text-center min-h-[60px] sm:min-h-[80px] gap-1 transition-opacity duration-700 pb-4">
-          <AnimatePresence>
-            {userTranscript && (
-              <KaraokeTranscript
-                role="user"
-                text={userTranscript}
-                name={user.displayName?.split(' ')[0] || 'User'}
-              />
-            )}
-          </AnimatePresence>
-          <AnimatePresence>
-            {modelTranscript && (
-              <KaraokeTranscript
-                role="model"
-                text={modelTranscript}
-                name={personaName}
-              />
-            )}
-          </AnimatePresence>
+        <div className="w-full max-w-2xl px-4 sm:px-8 flex flex-col items-center justify-center min-h-[80px] transition-opacity duration-700 pb-8">
+          <UnifiedTranscript
+            userText={userTranscript}
+            modelText={modelTranscript}
+            userName={user.displayName?.split(' ')[0] || 'User'}
+            modelName={personaName}
+          />
         </div>
       </main>
 
@@ -3205,7 +3193,7 @@ ${historyContext}
         )}
       </AnimatePresence>
 
-      <div className="fixed bottom-28 left-0 right-0 px-8 z-30 pointer-events-none">
+      <div className="fixed top-24 left-0 right-0 px-8 z-30 pointer-events-none flex flex-col items-end">
         <AnimatePresence>
           {tasks.map(task => (
             <motion.div
