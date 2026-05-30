@@ -98,6 +98,7 @@ interface WaSession {
   status: WaStatus;
   qrCode: string | null;
   qrRaw: string | null;
+  pairingCode?: string | null;
   phone: string | null;
   sock: any | null;
   authDir: string;
@@ -228,17 +229,21 @@ export class WhatsAppManager {
     }
   }
 
-  async startPairing(userId: string): Promise<{ pairingCode: string; status: string }> {
+  async startPairing(userId: string, phoneNumber?: string): Promise<{ pairingCode: string; status: string }> {
     const existing = this.sessions.get(userId);
     if (existing && ['init', 'qr_ready', 'paired'].includes(existing.status)) {
-      return { pairingCode: safeUserId(userId), status: existing.status };
+      if (phoneNumber) {
+        await this.disconnect(userId);
+      } else {
+        return { pairingCode: safeUserId(userId), status: existing.status };
+      }
     }
 
-    await this.startSession(userId);
+    await this.startSession(userId, phoneNumber);
     return { pairingCode: safeUserId(userId), status: this.sessions.get(userId)?.status || 'init' };
   }
 
-  async startSession(userId: string): Promise<void> {
+  async startSession(userId: string, phoneNumber?: string): Promise<void> {
     const safeId = safeUserId(userId);
     const authDir = path.join(this.authRoot, safeId);
     const dataFile = path.join(authDir, 'session-data.json');
@@ -261,6 +266,7 @@ export class WhatsAppManager {
       status: 'init',
       qrCode: null,
       qrRaw: null,
+      pairingCode: null,
       phone: null,
       sock: null,
       authDir,
@@ -294,6 +300,23 @@ export class WhatsAppManager {
     });
 
     entry.sock = sock;
+
+    if (phoneNumber && !state.creds.registered) {
+      setTimeout(async () => {
+        try {
+          const cleaned = phoneNumber.replace(/\D/g, '');
+          console.log(`[Baileys] Requesting pairing code for phone number: ${cleaned}`);
+          const code = await sock.requestPairingCode(cleaned);
+          entry.pairingCode = code;
+          entry.status = 'qr_ready';
+          console.log(`[Baileys] Generated pairing code successfully: ${code}`);
+        } catch (err: any) {
+          console.error(`[Baileys] Failed to generate pairing code:`, err);
+          entry.error = err.message || 'Failed to request pairing code';
+          entry.status = 'error';
+        }
+      }, 1000);
+    }
     entry.saveTimer = setInterval(() => {
       try {
         writeSessionData(entry);
@@ -386,7 +409,7 @@ export class WhatsAppManager {
     sock.ev.on('contacts.update', updateContacts);
   }
 
-  async getStatusOrStart(userId: string): Promise<{ status: string; qrCode?: string; phone?: string; error?: string } | null> {
+  async getStatusOrStart(userId: string): Promise<{ status: string; qrCode?: string; phone?: string; error?: string; pairingCode?: string } | null> {
     const current = this.getStatus(userId);
     if (current) return current;
 
@@ -399,7 +422,7 @@ export class WhatsAppManager {
     return null;
   }
 
-  getStatus(userId: string): { status: string; qrCode?: string; phone?: string; error?: string } | null {
+  getStatus(userId: string): { status: string; qrCode?: string; phone?: string; error?: string; pairingCode?: string } | null {
     const entry = this.sessions.get(userId);
     if (!entry) return null;
     return {
@@ -407,6 +430,7 @@ export class WhatsAppManager {
       qrCode: entry.qrCode || undefined,
       phone: entry.phone || undefined,
       error: entry.error || undefined,
+      pairingCode: entry.pairingCode || undefined,
     };
   }
 

@@ -39,10 +39,10 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   return data as T;
 }
 
-export async function startWhatsAppPairing(userId: string): Promise<{ pairingCode: string; status?: string }> {
+export async function startWhatsAppPairing(userId: string, phoneNumber?: string): Promise<{ pairingCode: string; status?: string }> {
   return requestJson('/api/whatsapp/pair', {
     method: 'POST',
-    body: JSON.stringify({ userId }),
+    body: JSON.stringify({ userId, phoneNumber }),
   });
 }
 
@@ -51,6 +51,7 @@ export async function getWhatsAppStatus(userId: string): Promise<{
   qrCode?: string;
   phone?: string;
   error?: string;
+  pairingCode?: string;
 }> {
   const res = await fetch(`${getBackendUrl()}/api/whatsapp/status/${encodeURIComponent(userId)}`);
   if (!res.ok) return { status: 'error', error: `Server returned ${res.status}` };

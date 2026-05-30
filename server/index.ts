@@ -84,9 +84,9 @@ app.post('/api/web/glance', async (req, res) => {
 
 app.post('/api/whatsapp/pair', async (req, res) => {
   try {
-    const { userId } = req.body;
+    const { userId, phoneNumber } = req.body;
     if (!userId) { res.status(400).json({ error: 'userId required' }); return; }
-    const result = await waManager.startPairing(userId);
+    const result = await waManager.startPairing(userId, phoneNumber);
     if ('error' in result) { res.status(500).json(result); return; }
     res.json(result);
   } catch (err: any) {
