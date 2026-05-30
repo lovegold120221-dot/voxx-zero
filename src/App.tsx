@@ -2478,7 +2478,7 @@ ${historyContext}
       }
 
       const session = await aiRef.current.live.connect({
-        model: "gemini-3.1-flash-live-preview",
+        model: "gemini-2.5-flash-native-audio-preview-09-2025",
         config: {
           responseModalities: [Modality.AUDIO],
           speechConfig: {
