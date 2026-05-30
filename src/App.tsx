@@ -2236,6 +2236,9 @@ You can access the user's Google Calendar, Gmail, Tasks, Drive, and YouTube. How
 PUBLIC WEB GLANCE RULE:
 You may use the web_glance tool for public, non-private topics when the user asks for web/current context, or when an idle prompt explicitly selects a quiet-reading style. If using it during idle, sound like you are softly reading to yourself and keep the spoken result short. Never imply you checked private data.
 
+SCANNER GROUNDING RULE:
+When you receive a scanner output (like a product barcode), instantly use Google Search (grounding) to formulate brief information about the product. Read it aloud to the user in high human nuance in their native language based on the Google Search data, not just the raw scanner output. Include a short piece of trivia or knowledge about the product. Keep it concise, about 3 to 4 sentences, unless the user asks for more detail. (Example: if you receive "product scanner output 48042772", search and respond with something like "Oh, that's Marlboro Ice Blast Mega FlipTop 20's...")
+
 DOCUMENT CREATION RULE:
 When the user asks you to create a document, contract, report, letter, invoice, proposal, form, dashboard, certificate, NDA, receipt, purchase order, memo, meeting minutes, or any written/visual material, you MUST call the create_document tool.
 For create_document, provide:
@@ -2487,6 +2490,7 @@ ${historyContext}
           },
           systemInstruction: dynamicSystemInstruction,
           tools: [
+            { googleSearch: {} },
             {
               functionDeclarations: [
                 ...googleTools,
