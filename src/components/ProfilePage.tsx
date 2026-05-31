@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Loader2, Power, Check, Settings, X, Save, Activity, Video, MessageSquare, Globe, User, Mail, FileText, AlertCircle, LogOut, Upload, Trash2 } from 'lucide-react';
+import { Loader2, Power, Check, Settings, X, Save, Activity, Video, MessageSquare, Globe, User, Mail, FileText, AlertCircle, LogOut, Upload, Trash2, Folder, Download, ExternalLink, Image } from 'lucide-react';
 import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
 import { supabase } from '../lib/supabase';
@@ -11,6 +11,7 @@ import {
   deleteKnowledgeFile,
   updateKnowledgeDomains,
 } from '../lib/supabaseStorage';
+import { listOutputs, deleteOutput, type WorkspaceOutput } from '../lib/workspace';
 
 const LANGUAGES = [
   { code: 'en', label: 'English' },
@@ -174,7 +175,7 @@ interface ProfilePageProps {
   onSetLanguage: (v: string) => void;
   selectedVoice: string;
   setSelectedVoice: (v: string) => void;
-  saveSettings: () => Promise<void>;
+  saveSettings: (callbacks?: { onSuccess?: () => void; onError?: (msg: string) => void }) => Promise<void>;
   isSaving: boolean;
 }
 
@@ -228,10 +229,38 @@ export function ProfilePage({
   const [savingDomains, setSavingDomains] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [workspaceOutputs, setWorkspaceOutputs] = useState<WorkspaceOutput[]>([]);
+  const [loadingWorkspace, setLoadingWorkspace] = useState(false);
+  const [deletingWorkspaceId, setDeletingWorkspaceId] = useState<string | null>(null);
 
   useEffect(() => {
     loadProfile();
+    loadWorkspace();
   }, []);
+
+  const loadWorkspace = async () => {
+    setLoadingWorkspace(true);
+    try {
+      const outputs = await listOutputs(user.uid);
+      setWorkspaceOutputs(outputs);
+    } catch (e) {
+      console.error('Failed to load workspace:', e);
+    } finally {
+      setLoadingWorkspace(false);
+    }
+  };
+
+  const handleWorkspaceDelete = async (id: string) => {
+    setDeletingWorkspaceId(id);
+    try {
+      await deleteOutput(id);
+      setWorkspaceOutputs(prev => prev.filter(w => w.id !== id));
+    } catch (e: any) {
+      setError(e.message || 'Failed to delete');
+    } finally {
+      setDeletingWorkspaceId(null);
+    }
+  };
 
   const loadProfile = async () => {
     try {
@@ -357,9 +386,9 @@ export function ProfilePage({
       animate={{ y: 0 }}
       exit={{ y: '100%' }}
       transition={{ type: "spring", damping: 25, stiffness: 200 }}
-      className="fixed inset-0 z-50 bg-[#0F0F11] flex flex-col h-full sm:rounded-t-[32px] sm:overflow-hidden sm:mt-12 shadow-2xl"
+      className="fixed inset-0 z-50 bg-black flex flex-col h-full sm:rounded-t-[32px] sm:overflow-hidden sm:mt-12 shadow-2xl"
     >
-      <header className="sticky top-0 w-full bg-[#0F0F11]/80 backdrop-blur-xl border-b border-white/5 px-4 py-3 flex items-center justify-between z-10 shrink-0">
+      <header className="sticky top-0 w-full bg-black/80 backdrop-blur-2xl border-b border-white/[0.04] px-4 py-3 flex items-center justify-between z-10 shrink-0">
         <div className="w-16" />
         <h1 className="text-base font-semibold tracking-wide text-white">Profile</h1>
         <button
@@ -382,7 +411,7 @@ export function ProfilePage({
               exit={{ opacity: 0, height: 0 }}
               className="overflow-hidden"
             >
-              <div className={`px-4 py-3 rounded-xl flex items-center gap-2 text-sm mb-4 ${
+              <div className={`px-4 py-3 rounded-2xl flex items-center gap-2 text-sm backdrop-blur-2xl ${
                 error ? 'bg-red-500/10 border border-red-500/20 text-red-400' : 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'
               }`}>
                 {error ? <AlertCircle className="w-4 h-4 shrink-0" /> : <Check className="w-4 h-4 shrink-0" />}
@@ -548,11 +577,99 @@ export function ProfilePage({
           <button
             onClick={saveDomains}
             disabled={savingDomains}
-            className="w-full mt-3 p-4 bg-[#1C1C1E] rounded-[20px] text-center active:bg-[#2C2C2E] transition-colors flex items-center justify-center gap-2"
+            className="w-full mt-3 p-4 bg-white/[0.03] backdrop-blur-2xl border border-white/[0.06] rounded-[20px] text-center active:bg-white/[0.06] transition-all flex items-center justify-center gap-2"
           >
             {savingDomains ? <Loader2 className="w-5 h-5 animate-spin text-[#d0a78b]" /> : <Check className="w-5 h-5 text-[#d0a78b]" />}
-            <span className="text-[15px] font-semibold text-[#d0a78b]">Save Domains to Cloud</span>
+            <span className="text-[15px] font-['SF_Pro_Text',system-ui,sans-serif] font-semibold text-[#d0a78b]">Save Domains to Cloud</span>
           </button>
+        </section>
+
+        {/* Workspace Section */}
+        <section>
+          <div className="px-4 mb-2 flex items-baseline justify-between">
+            <h2 className="text-[13px] uppercase tracking-wide text-zinc-500 font-medium">Workspace</h2>
+            <span className="text-[11px] text-zinc-600">auto-saved locally · synced to Drive</span>
+          </div>
+          <div className="bg-[#1C1C1E] rounded-[20px] overflow-hidden">
+            {loadingWorkspace ? (
+              <div className="p-8 flex items-center justify-center">
+                <Loader2 className="w-5 h-5 animate-spin text-zinc-500" />
+              </div>
+            ) : workspaceOutputs.length === 0 ? (
+              <div className="p-6 text-center">
+                <Folder className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
+                <p className="text-[15px] text-zinc-500">No outputs yet.</p>
+                <p className="text-[13px] text-zinc-600 mt-1">Documents, images, and captures from Beatrice will appear here.</p>
+              </div>
+            ) : (
+              workspaceOutputs.map((w, i) => (
+                <div key={w.id} className={`p-4 flex items-center justify-between ${i !== workspaceOutputs.length - 1 ? 'border-b border-white/5' : ''}`}>
+                  <div className="flex items-center gap-3 min-w-0 flex-1 pr-4">
+                    <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0">
+                      {w.type === 'image' || w.type === 'screenshot' || w.type === 'capture' ? (
+                        <Image className="w-4 h-4 text-zinc-400" />
+                      ) : (
+                        <FileText className="w-4 h-4 text-zinc-400" />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[15px] text-white truncate">{w.title}</p>
+                      <p className="text-[11px] text-zinc-500 flex items-center gap-2 mt-0.5">
+                        <span className="capitalize">{w.type}</span>
+                        <span>&middot;</span>
+                        <span>{w.fileSize < 1024 ? `${w.fileSize} B` : w.fileSize < 1048576 ? `${(w.fileSize / 1024).toFixed(1)} KB` : `${(w.fileSize / 1048576).toFixed(1)} MB`}</span>
+                        <span>&middot;</span>
+                        <span>{new Date(w.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
+                      </p>
+                      {w.driveLink && (
+                        <a
+                          href={w.driveLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[11px] text-[#d0a78b] hover:underline inline-flex items-center gap-1 mt-0.5"
+                          onClick={e => e.stopPropagation()}
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          Drive
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {w.textContent && (
+                      <button
+                        onClick={() => {
+                          const blob = new Blob([w.textContent!], { type: w.mimeType });
+                          const url = URL.createObjectURL(blob);
+                          window.open(url, '_blank');
+                          setTimeout(() => URL.revokeObjectURL(url), 60000);
+                        }}
+                        className="p-2 rounded-full active:bg-white/5 text-zinc-500 hover:text-[#d0a78b] transition-colors"
+                        aria-label="Preview"
+                        title="Preview"
+                      >
+                        <Download className="w-4 h-4" />
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleWorkspaceDelete(w.id)}
+                      disabled={deletingWorkspaceId === w.id}
+                      className="p-2 rounded-full active:bg-white/5 text-zinc-500 hover:text-red-400 transition-colors"
+                      aria-label="Delete"
+                      title="Delete"
+                    >
+                      {deletingWorkspaceId === w.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          {workspaceOutputs.length > 0 && (
+            <p className="text-[11px] text-zinc-600 px-4 mt-2">
+              {workspaceOutputs.filter(w => w.driveLink).length}/{workspaceOutputs.length} synced to Google Drive
+            </p>
+          )}
         </section>
 
         {/* Persona Settings */}
@@ -648,12 +765,21 @@ export function ProfilePage({
 
         <section className="space-y-3">
           <button
-            onClick={saveSettings}
+            onClick={() => saveSettings({
+              onSuccess: () => {
+                setSuccess('Settings saved');
+                setTimeout(() => setSuccess(null), 2000);
+              },
+              onError: (msg: string) => {
+                setError(msg);
+                setTimeout(() => setError(null), 4000);
+              }
+            })}
             disabled={isSaving}
-            className="w-full p-4 bg-amber-500 rounded-[20px] text-center active:bg-amber-400 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            className="w-full p-4 bg-[#d0a78b] rounded-[20px] text-center active:brightness-90 transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-[#d0a78b]/20"
           >
             {isSaving ? <Loader2 className="w-5 h-5 animate-spin text-black" /> : <Save className="w-5 h-5 text-black" />}
-            <span className="text-[15px] font-bold text-black">Save Settings</span>
+            <span className="text-[15px] font-['SF_Pro_Text',system-ui,sans-serif] font-bold text-black">Save Settings</span>
           </button>
         </section>
 
@@ -661,9 +787,9 @@ export function ProfilePage({
         <section>
           <button
             onClick={() => { signOut(auth); onClose(); }}
-            className="w-full p-4 bg-[#1C1C1E] rounded-[20px] text-center active:bg-[#2C2C2E] transition-colors"
+            className="w-full p-4 bg-white/[0.03] backdrop-blur-2xl border border-white/[0.06] rounded-[20px] text-center active:bg-white/[0.06] transition-all"
           >
-            <span className="text-[15px] font-semibold text-red-500">Sign Out</span>
+            <span className="text-[15px] font-['SF_Pro_Text',system-ui,sans-serif] font-semibold text-red-400">Sign Out</span>
           </button>
         </section>
 

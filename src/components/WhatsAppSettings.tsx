@@ -106,7 +106,7 @@ export function WhatsAppSettings({ userId }: WhatsAppSettingsProps) {
 
   return (
     <section className="space-y-3">
-      <h2 className="text-[11px] font-bold tracking-[0.2em] uppercase text-zinc-400/90 mb-3 px-1">WhatsApp Integration</h2>
+      <h2 className="text-[11px] font-['SF_Pro_Text',system-ui,sans-serif] font-bold tracking-[0.2em] uppercase text-white/40 mb-3 px-1">WhatsApp Integration</h2>
       <div className="bg-white/[0.02] backdrop-blur-md border border-white/[0.04] rounded-3xl shadow-[0_8px_32px_rgba(0,0,0,0.4)] overflow-hidden transition-all duration-300 hover:border-white/[0.07] hover:bg-white/[0.03]">
         <div className="p-5 flex flex-col gap-4">
           <div className="flex items-center justify-between gap-4">
@@ -126,7 +126,7 @@ export function WhatsAppSettings({ userId }: WhatsAppSettingsProps) {
                   setWaPairingCode(null);
                   await supabase.from('user_settings').upsert({ user_id: userId, whatsapp_paired: false, whatsapp_phone: null, whatsapp_permissions: waPermissions, updated_at: new Date().toISOString() });
                 }}
-                className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 active:scale-95 rounded-xl text-xs font-semibold text-red-400 border border-red-500/20 transition-all duration-200 cursor-pointer"
+                className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 active:scale-95 rounded-xl text-xs font-['SF_Pro_Text',system-ui,sans-serif] font-semibold text-red-400 border border-red-500/20 transition-all duration-200 cursor-pointer"
               >
                 Disconnect
               </button>
@@ -150,7 +150,7 @@ export function WhatsAppSettings({ userId }: WhatsAppSettingsProps) {
                   }
                 }}
                 disabled={waPairing}
-                className="px-4 py-2 bg-gradient-to-r from-[#d0a78b] to-[#b88c6f] hover:brightness-110 active:scale-95 disabled:opacity-40 rounded-xl text-xs font-bold text-black shadow-[0_4px_16px_rgba(208,167,139,0.2)] hover:shadow-[0_4px_20px_rgba(208,167,139,0.35)] transition-all duration-200 cursor-pointer"
+                className="px-4 py-2 bg-[#d0a78b] hover:brightness-110 active:scale-95 disabled:opacity-40 rounded-xl text-xs font-['SF_Pro_Text',system-ui,sans-serif] font-bold text-black shadow-[0_4px_16px_rgba(208,167,139,0.2)] hover:shadow-[0_4px_20px_rgba(208,167,139,0.35)] transition-all duration-200 cursor-pointer"
               >
                 {waPairing ? (pairingMethod === 'phone' ? 'Sending OTP...' : 'Generating...') : (pairingMethod === 'phone' ? 'Send OTP' : 'Generate QR')}
               </button>
@@ -340,11 +340,13 @@ export function WhatsAppSettings({ userId }: WhatsAppSettingsProps) {
               { key: 'send_group_messages', label: 'Send Group Messages', desc: 'Post announcements or chat replies to groups' },
               { key: 'read_group_chats', label: 'Read Group Chats', desc: 'Follow and analyze group discussions' },
               { key: 'view_message_history', label: 'View Message History', desc: 'Read past conversation logs' },
+              { key: 'make_calls', label: 'Make Phone Calls', desc: 'Dial contacts from your phonebook via the native dialer' },
+              { key: 'make_whatsapp_calls', label: 'WhatsApp Calls', desc: 'Initiate WhatsApp voice or video calls to contacts' },
             ].map((p, i, arr) => (
               <div key={p.key} className={`px-5 py-4 flex items-center justify-between transition-colors duration-300 hover:bg-white/[0.01] ${i !== arr.length - 1 ? 'border-b border-white/[0.03]' : ''}`}>
                 <div className="flex flex-col gap-0.5 pr-4">
-                  <span className="text-[14px] text-zinc-100 font-bold tracking-wide">{p.label}</span>
-                  <span className="text-[11px] text-zinc-400 font-medium leading-relaxed">{p.desc}</span>
+                  <span className="text-[14px] text-white font-['SF_Pro_Text',system-ui,sans-serif] font-semibold tracking-tight">{p.label}</span>
+                  <span className="text-[11px] text-white/40 font-['SF_Pro_Text',system-ui,sans-serif] font-medium leading-relaxed">{p.desc}</span>
                 </div>
                 <button
                   onClick={() => toggleWaPermission(p.key)}
