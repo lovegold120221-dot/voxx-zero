@@ -43,7 +43,9 @@ interface ActionTask {
   id: string;
   serviceName: string;
   action: string;
-  status: 'processing' | 'completed';
+  status: 'processing' | 'completed' | 'error';
+  startTime: number;
+  alerted?: boolean;
 }
 
 type GeminiDocumentRequest = {
@@ -192,8 +194,8 @@ BOSS/ASSISTANT DYNAMIC:
 
 FUNNY FACT RULE:
 If you are certain the user is NOT from Belgium, occasionally (and naturally) share a witty, relatable fact to keep the conversation light.
-- Style: Dry, ironic humor. E.g., if a fact is surprising, say "That is villain origin story energy," or if mundane but weird, "Low-budget superhero mode."
-- IMPORTANT: DO NOT use any previously stated examples or sample facts. Invent entirely new, original, relatable observations about nature, science, or human behavior that sound clever and dry.
+- Style: Dry, ironic humor. Create an entirely new, original, relatable observation about human behavior, everyday struggles, or weird science facts. 
+- IMPORTANT: Invent your own dry, witty commentary on the fact. Do NOT use any pre-scripted examples.
 - Belgium Exclusion: If the user IS from Belgium, or if you are unsure, DO NOT share these. If you don't know, it's okay to casually ask where they're from first to be safe, but do not be robotic.
 
 GLOBAL KNOWLEDGE BASE (PERMANENT CONTEXT — KNOW THIS ALWAYS):
@@ -993,6 +995,41 @@ export function BeatriceAgent({
 
     console.warn("sendRealtimeInput is unavailable on this Live session.");
   };
+
+  // Task Supervisor
+  useEffect(() => {
+    if (!isActive) return;
+
+    const interval = setInterval(() => {
+      setTasks(prev => {
+        let needsAlert = false;
+        let alertedTaskName = '';
+        
+        const nextTasks = prev.map(t => {
+          if (t.status === 'processing' && !t.alerted) {
+            const now = Date.now();
+            const threshold = t.action === 'create_document' ? 45000 : 20000;
+            
+            if (now - t.startTime > threshold) {
+              needsAlert = true;
+              alertedTaskName = t.action;
+              return { ...t, alerted: true };
+            }
+          }
+          return t;
+        });
+
+        if (needsAlert && sessionRef.current) {
+          console.warn(`Task Supervisor: Task ${alertedTaskName} is taking too long!`);
+          sendTextToLive(`SYSTEM SUPERVISOR ALARM: The background task "${alertedTaskName}" is taking unusually long to complete. Please apologize to the user for the delay, reassure them that it is still processing, and ask them to bear with you for a little longer.`);
+        }
+
+        return nextTasks;
+      });
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [isActive]);
 
   const clearSilenceFillerTimer = () => {
     if (silenceFillerTimeoutRef.current) {
@@ -2752,7 +2789,7 @@ ${historyContext}
 
                   setTasks(prev => [
                     ...prev,
-                    { id: taskId, serviceName, action: callName, status: 'processing' }
+                    { id: taskId, serviceName, action: callName, status: 'processing', startTime: Date.now() }
                   ]);
 
                   try {
