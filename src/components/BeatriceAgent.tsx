@@ -16,12 +16,16 @@ import { ProfilePage } from './ProfilePage';
 import { WhatsAppSettings } from './WhatsAppSettings';
 import { startWhatsAppPairing, getWhatsAppStatus, disconnectWhatsApp } from '../lib/whatsappClient';
 import { webGlance } from '../lib/webClient';
-import { isGoogleLinked } from './EntryFlow';
+import { isGoogleLinked } = './EntryFlow';
 
 // ─── Helper functions for system instruction ──
-
 function jidDigits(jid: string): string {
   return (jid.split('@')[0] || '').replace(/\D/g, '');
+}
+
+function formatPhone(digits: string): string {
+  const clean = (digits || '').replace(/\D/g, '');
+  return clean ? `+${clean}` : '';
 }
 
 function formatPhone(digits: string): string {
