@@ -2034,19 +2034,27 @@ export function BeatriceAgent({
     navigator.clipboard.writeText(text);
   };
 
-  const SkillItem = ({ label, desc, enabled, copyText, icon: Icon }: { label: string, desc: string, enabled?: boolean, copyText: string, icon: any }) => (
-    <div className="group px-5 py-4 flex items-center justify-between border-b border-white/[0.03] last:border-b-0 hover:bg-white/[0.03] transition-colors">
+  const SkillItem = ({ label, desc, enabled, copyText, icon: Icon, interactive = false, onToggle }: { label: string, desc: string, enabled?: boolean, copyText: string, icon: any, interactive?: boolean, onToggle?: () => void }) => (
+    <div className="px-5 py-4 flex items-center justify-between transition-colors duration-300 hover:bg-white/[0.03] border-b border-white/[0.03] last:border-b-0">
       <div className="flex items-center gap-4">
         <div className="w-9 h-9 rounded-xl bg-white/[0.03] flex items-center justify-center shrink-0 text-white/50 border border-white/[0.05]">
           <Icon className="w-5 h-5" strokeWidth={1.5} />
         </div>
         <div className="flex flex-col gap-0.5">
-          <span className="text-sm font-semibold text-white/90 tracking-tight">{label}</span>
-          <span className="text-xs text-white/40 font-medium">{desc}</span>
+          <span className="text-[14px] text-white/90 font-semibold tracking-tight">{label}</span>
+          <span className="text-[11px] text-white/40 font-medium leading-relaxed">{desc}</span>
         </div>
       </div>
       <div className="flex items-center gap-3">
-        {typeof enabled !== 'undefined' && (
+        {interactive ? (
+          <button
+            onClick={onToggle}
+            aria-pressed={enabled}
+            className={`w-10 h-6 rounded-full transition-all duration-300 flex items-center shrink-0 cursor-pointer ${enabled ? 'bg-[#d0a78b]' : 'bg-white/[0.1]'}`}
+          >
+            <span className={`block w-4.5 h-4.5 rounded-full bg-white transition-all duration-300 shadow-md ${enabled ? 'ml-[18px]' : 'ml-[3px]'}`} />
+          </button>
+        ) : (
           <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full ${enabled ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-white/[0.03] border border-white/[0.05]'}`}>
             <div className={`w-1.5 h-1.5 rounded-full ${enabled ? 'bg-emerald-400' : 'bg-zinc-600'}`} />
             <span className={`text-[10px] font-bold uppercase tracking-wider ${enabled ? 'text-emerald-400' : 'text-zinc-500'}`}>
@@ -2054,16 +2062,10 @@ export function BeatriceAgent({
             </span>
           </div>
         )}
-        <button 
-          onClick={() => copyToClipboard(copyText)}
-          className="p-2 rounded-full text-white/30 hover:text-[#d0a78b] hover:bg-white/5 transition-all opacity-0 group-hover:opacity-100"
-          aria-label={`Copy ${label} info`}
-        >
-          <Clipboard className="w-4 h-4" />
-        </button>
       </div>
     </div>
   );
+
 
   const saveSettings = async (callbacks?: { onSuccess?: () => void; onError?: (msg: string) => void }) => {
     setIsSaving(true);
