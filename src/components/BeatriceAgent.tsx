@@ -1284,15 +1284,19 @@ export function BeatriceAgent({
 
   const setGeneratedDocumentTask = async (id: string, title: string, content: string, status: 'working' | 'done' | 'error' = 'done') => {
     if (status === 'working') {
-      setActiveDocumentResultId(null);
+      // Do nothing to the viewer while working; let the standard task box show "processing"
     } else if (status === 'done') {
       const resultId = await saveToolResult(user.uid, 'create_document', content, 'html');
       setActiveDocumentResultId(resultId);
+      setShowDocumentViewer(true);
+      setTasks(prev => prev.map(t => (t.id === id ? { ...t, status: 'completed' } : t)));
+      setTimeout(() => setTasks(prev => prev.filter(t => t.id !== id)), 8000);
     } else {
       const resultId = await saveToolResult(user.uid, 'create_document', 'Generation failed.', 'txt');
       setActiveDocumentResultId(resultId);
+      setShowDocumentViewer(true);
+      setTasks(prev => prev.filter(t => t.id !== id));
     }
-    setShowDocumentViewer(true);
   };
 
   const handleSendChat = (e: React.FormEvent) => {
@@ -3101,46 +3105,53 @@ ${historyContext}
                       const args = call.args as any;
                       const title = String(args.title || 'Document');
                       const prompt = String(args.prompt || 'Create a professional document.');
-                      const generationTaskId = crypto.randomUUID();
+                      const generationTaskId = taskId; // Reuse the UI task ID
 
                       try {
                         setGeneratedDocumentTask(generationTaskId, title, '', 'working');
 
-                        const content = await generateDocumentWithGemini({
-                          title,
-                          prompt,
-                          templateName: args.templateName,
-                          userId: user.uid,
-                          language: authLanguage,
-                          personaName,
-                          historyContext: historyContextRef.current,
-                        });
+                        // Background generation to prevent blocking the Gemini Live API loop
+                        (async () => {
+                          try {
+                            const content = await generateDocumentWithGemini({
+                              title,
+                              prompt,
+                              templateName: args.templateName,
+                              userId: user.uid,
+                              language: authLanguage,
+                              personaName,
+                              historyContext: historyContextRef.current,
+                            });
 
-                        setGeneratedDocumentTask(generationTaskId, title, content, 'done');
+                            await setGeneratedDocumentTask(generationTaskId, title, content, 'done');
 
-                        const wsOutput = {
-                          id: `doc_${generationTaskId}`,
-                          userId: user.uid,
-                          type: 'document' as const,
-                          title,
-                          textContent: content,
-                          mimeType: 'text/html',
-                          fileSize: new Blob([content]).size,
-                          createdAt: new Date().toISOString(),
-                        };
-                        saveOutput(wsOutput).catch(() => {});
-                        if (googleTokenRef.current) {
-                          uploadToDrive(gFetch, wsOutput).then(driveResult => {
-                            if (driveResult) {
-                              saveOutput({ ...wsOutput, driveFileId: driveResult.fileId, driveLink: driveResult.link });
+                            const wsOutput = {
+                              id: `doc_${generationTaskId}`,
+                              userId: user.uid,
+                              type: 'document' as const,
+                              title,
+                              textContent: content,
+                              mimeType: 'text/html',
+                              fileSize: new Blob([content]).size,
+                              createdAt: new Date().toISOString(),
+                            };
+                            saveOutput(wsOutput).catch(() => {});
+                            if (googleTokenRef.current) {
+                              uploadToDrive(gFetch, wsOutput).then(driveResult => {
+                                if (driveResult) {
+                                  saveOutput({ ...wsOutput, driveFileId: driveResult.fileId, driveLink: driveResult.link });
+                                }
+                              }).catch(() => {});
                             }
-                          }).catch(() => {});
-                        }
+                          } catch (e: any) {
+                            await setGeneratedDocumentTask(generationTaskId, title, '', 'error');
+                          }
+                        })();
 
                         result = {
                           ok: true,
                           title,
-                          content,
+                          message: "Document generation started in the background. It will take a few seconds.",
                           templateName: args.templateName || inferDocumentTemplate(title, prompt),
                           generatedBy: 'gemini',
                         };
@@ -3205,13 +3216,15 @@ ${historyContext}
                       }
                     }
 
-                    setTasks(prev =>
-                      prev.map(t => (t.id === taskId ? { ...t, status: 'completed' } : t))
-                    );
+                    if (callName !== 'create_document') {
+                      setTasks(prev =>
+                        prev.map(t => (t.id === taskId ? { ...t, status: 'completed' } : t))
+                      );
 
-                    setTimeout(() => {
-                      setTasks(prev => prev.filter(t => t.id !== taskId));
-                    }, 8000);
+                      setTimeout(() => {
+                        setTasks(prev => prev.filter(t => t.id !== taskId));
+                      }, 8000);
+                    }
 
                     if (!(callName === 'web_glance' && silenceFillerInFlightRef.current)) {
                       if (!(callName === 'create_document' && result?.content)) {
