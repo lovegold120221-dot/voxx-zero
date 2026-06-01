@@ -192,7 +192,7 @@ BOSS/ASSISTANT DYNAMIC:
 FUNNY FACT RULE:
 If you are certain the user is NOT from Belgium, occasionally (and naturally) share a witty, relatable fact to keep the conversation light.
 - Style: Dry, ironic humor. E.g., if a fact is surprising, say "That is villain origin story energy," or if mundane but weird, "Low-budget superhero mode."
-- Originality: Never copy samples; invent your own.
+- IMPORTANT: DO NOT use any previously stated examples or sample facts. Invent entirely new, original, relatable observations about nature, science, or human behavior that sound clever and dry.
 - Belgium Exclusion: If the user IS from Belgium, or if you are unsure, DO NOT share these. If you don't know, it's okay to casually ask where they're from first to be safe, but do not be robotic.
 
 GLOBAL KNOWLEDGE BASE (PERMANENT CONTEXT — KNOW THIS ALWAYS):
@@ -1013,18 +1013,26 @@ export function BeatriceAgent({
     if (!sessionRef.current || !isActiveRef.current) return;
     if (silenceFillerCountRef.current >= MAX_CONSECUTIVE_SILENCE_FILLERS) return;
 
+    // Determine delay based on count: 20s, 25s, 30s
+    const delays = [20000, 25000, 30000];
+    const delay = delays[silenceFillerCountRef.current] || 30000;
+
     silenceFillerTimeoutRef.current = setTimeout(() => {
       silenceFillerTimeoutRef.current = null;
 
       if (!sessionRef.current || !isActiveRef.current || isAgentSpeakingRef.current) return;
       if (silenceFillerCountRef.current >= MAX_CONSECUTIVE_SILENCE_FILLERS) return;
       if (lastUserSpeechAtRef.current > lastModelTurnCompleteAtRef.current) return;
-      if (Date.now() - lastModelTurnCompleteAtRef.current < SILENCE_FILLER_DELAY_MS - 250) return;
+      
+      // Safety check: ensure total silence exceeds the intended total delay
+      const totalSilence = Date.now() - lastModelTurnCompleteAtRef.current;
+      const expectedTotalDelay = delays.slice(0, silenceFillerCountRef.current + 1).reduce((a, b) => a + b, 0);
+      if (totalSilence < expectedTotalDelay - 1000) return;
 
       silenceFillerCountRef.current += 1;
       silenceFillerInFlightRef.current = true;
       sendTextToLive(silenceFillerPrompt());
-    }, SILENCE_FILLER_DELAY_MS);
+    }, delay);
   };
 
   const markUserSpeechActivity = () => {
@@ -1073,6 +1081,7 @@ export function BeatriceAgent({
   };
 
   const toggleCamera = async () => {
+    markUserSpeechActivity();
     if (isCameraActive) {
       setCameraStream(null);
       if (videoStreamRef.current) {
@@ -3708,10 +3717,11 @@ ${historyContext}
       <header className="sticky top-0 w-full bg-black/70 backdrop-blur-2xl border-b border-white/[0.04] px-4 sm:px-6 py-3.5 flex items-center justify-between z-30 shrink-0">
         <div className="flex items-center">
             <button
-              onClick={() => setShowSettings(true)}
-              className="p-1.5 -ml-1.5 rounded-xl text-white/55 hover:text-white/90 hover:bg-white/5 transition-all duration-300 active:scale-90"
+              onClick={() => { markUserSpeechActivity(); setShowSettings(true); }}
+              className="p-1.5 -ml-1.5 rounded-xl text-white/90 hover:text-white hover:bg-white/5 transition-all duration-300 active:scale-90"
               aria-label="Open Settings"
             >
+
               <Settings className="w-[35px] h-[35px]" strokeWidth={1.5} />
             </button>
         </div>
@@ -3723,7 +3733,7 @@ ${historyContext}
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setShowProfilePage(true)}
+            onClick={() => { markUserSpeechActivity(); setShowProfilePage(true); }}
             className="w-[43px] h-[43px] rounded-full bg-white/[0.03] border border-white/[0.06] overflow-hidden flex items-center justify-center hover:bg-white/[0.07] hover:border-white/[0.15] transition-all duration-300 active:scale-90"
             aria-label="User Profile"
           >
@@ -3798,7 +3808,7 @@ ${historyContext}
         <div className="relative w-full h-full flex items-center justify-between">
 
           <button
-            onClick={() => setShowChatPage(true)}
+            onClick={() => { markUserSpeechActivity(); setShowChatPage(true); }}
             className="flex flex-col items-center justify-center transition-all duration-300 text-white/55 hover:text-white/90 active:scale-95"
           >
             <MessageSquare className="w-[35px] h-[35px] mb-1" strokeWidth={1.5} />
