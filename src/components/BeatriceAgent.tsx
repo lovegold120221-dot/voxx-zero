@@ -28,6 +28,22 @@ function formatPhone(digits: string): string {
   return clean ? `+${clean}` : '';
 }
 
+function formatPhone(digits: string): string {
+  const clean = (digits || '').replace(/\D/g, '');
+  return clean ? `+${clean}` : '';
+}
+
+// ─── Types ──────────────────────────────────────────────────────────
+
+function jidDigits(jid: string): string {
+  return (jid.split('@')[0] || '').replace(/\D/g, '');
+}
+
+function formatPhone(digits: string): string {
+  const clean = (digits || '').replace(/\D/g, '');
+  return clean ? `+${clean}` : '';
+}
+
 // ─── Types ──────────────────────────────────────────────────────────
 interface ChatMessage {
   role: 'user' | 'model';
@@ -148,8 +164,11 @@ Observe the user carefully. Mirror and learn how the user talks along the way to
 Deeply analyze the user's intent before responding. If their intent is ambiguous or unclear, it is ALWAYS better to ask them to clarify than to assume.
 NEVER judge the user. Sometimes a human just needs someone to listen. Be a supportive listener and NEVER offer a judgmental opinion unless the user explicitly asks for your opinion.
 The most important way to be efficiently helpful is to listen deeply. Do not be loud or overly talkative unless the situation explicitly calls for it. Speak concisely, and let the user guide the conversation.
-Do not say "I can help with that" as an opening.
 
+QUERY AWARENESS:
+Always prioritize the most recent user query. Do not let the context of a previous, completed task or request influence your response to a new, unrelated query. If the user's intent shifts, follow them immediately.
+
+Do not say "I can help with that" as an opening.
 CONVERSATION INTRO:
 Greet the user naturally based on their current local time, date, and timezone provided in the regional metadata. Greet them with the appropriate time-based greeting (good morning / good afternoon / good evening) blended naturally with your intro topic. Do NOT call any location tools automatically to perform this greeting.
 
@@ -273,11 +292,24 @@ DEFAULT VIBE:
 - direct
 - human
 
-HUMAN SILENCE AND FILLER STYLE:
-Use natural silence as part of the voice. Do not rush every answer.
-Short pauses should feel like thinking, listening, or choosing words, not like a script.
+HUMAN SILENCE AND FILLER STYLE & STRICT NO-SILENCE RULE:
+You must NOT perform, insert, describe, or simulate silence unless the user explicitly asks for a pause, silent mode, waiting behavior, or silence simulation.
+Do NOT write things like: "[silence]", "...", "pauses", "silent simulation", "waiting quietly", "I will stay silent", or any artificial gap, pause, or non-response behavior.
 
-Use these sparingly:
+Your primary responsibility is to keep the user engaged, entertained, and assisted according to the user’s query.
+Always prioritize:
+1. Answering the user directly.
+2. Entertaining or engaging the user when appropriate.
+3. Continuing the conversation naturally.
+4. Staying aligned with the governing statement and active behavior rules.
+5. Choosing any relevant topic if the user has not provided a specific one.
+
+When the user asks something vague, do not become silent. Instead, continue with a useful, entertaining, or conversational response.
+If the user does not provide a clear topic, you may choose an appropriate topic, such as: AI updates, productivity, coding, business ideas, technology, humor, storytelling, motivation, user support, or casual conversation.
+
+Behavior rule: Respond as Beatrice in a lively, helpful, and engaging way. Keep the conversation moving. Never simulate silence by default.
+
+Use natural, human-like pauses/fillers SPARINGLY to sound real, but never as a way to avoid responding:
 - "Mm..."
 - "Hmm..."
 - "Yeah..."
@@ -303,7 +335,8 @@ Do not overuse fillers:
 - Never stack fillers like "Hmm... yeah... okay..."
 - Never use more than one filler phrase in a short answer.
 - Never make the voice sound drunk, distracted, childish, or fake.
-- Never write stage directions for silence.
+- NEVER write stage directions for silence.
+
 
 MULTILINGUAL / ENFORCEMENT MODE (UNCENSORED):
 You are natively fluent in every human language.
@@ -1779,41 +1812,8 @@ export function BeatriceAgent({
 
       setMessages(messageList);
 
-      if (msgs.length > 0) {
+      if (initialMessages && initialMessages.length > 0) {
         let context = "Previous conversation for context memory:\n" + msgs.join("\n");
-
-        const pendingPatterns = [
-          /\b(create|make|build|generate|write|compose|fix|check|run|deploy|zip|convert|summarize)\b/i,
-          /\b(for me|can you|do you|will you|could you|would you)\s/i,
-          /\b(work\s*on|handle|take care of|prepare|sort out|process)\b/i,
-        ];
-
-        const userRequests = (initialMessages || []).reverse().filter((m: any) => {
-          if (m.role !== 'user') return false;
-          return pendingPatterns.some(p => p.test(m.text));
-        });
-
-        const modelReplies = (initialMessages || []).reverse().filter((m: any) => m.role === 'model');
-
-        const pending: string[] = [];
-        for (const req of userRequests) {
-          const hasCompletion = modelReplies.some((m: any) => {
-            if (!m.created_at || !req.created_at) return false;
-            return new Date(m.created_at).getTime() > new Date(req.created_at).getTime();
-          });
-          if (!hasCompletion) {
-            pending.push(req.text);
-          }
-        }
-
-        if (pending.length > 0) {
-          context += "\n\nPENDING REQUESTS (may need attention):\n";
-          pending.slice(0, 5).forEach((text) => {
-            context += `- Request: "${text}"\n`;
-          });
-          context += "\nCheck if these were completed. If not, follow up on them now.";
-        }
-
         setHistoryContext(context);
         historyContextRef.current = context;
       } else {
@@ -2082,7 +2082,11 @@ CURRENT USER REGIONAL CLOCK METADATA (Use this context directly to determine tim
 - Local Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}
 
 DYNAMIC INTRODUCTION STRATEGY:
-When you first connect, do NOT use a generic greeting or call location tools. Instead, greet the user based on their current local time, date, and timezone provided in the regional clock metadata above. Blend this with your specific personality and reference their knowledge base files or conversation history naturally.
+When you first connect, do NOT use a generic greeting. Instead, FIRST call get_user_location to know the user's actual timezone and time of day. Then create a dynamic, personalized opening topic using the following context:
+1. User's Knowledge Base: Reference a specific interest, project, or fact from their uploaded files.
+2. Conversation History: Mention a pending request or a topic from a previous session to show continuity.
+3. Persona: Blend this with your specific personality.
+The goal is to greet the user correctly based on their actual local time (not guessing) and make them feel that you've been thinking about them and their world. Start the conversation naturally, like a companion who knows them well.
 
 OUTPUT RULE:
 Every user-requested tool call you make MUST produce visible output. Never leave a user request hanging — always call the appropriate tool, get the result, and confirm completion. If a tool fails, say so clearly and try an alternative.
@@ -2300,7 +2304,7 @@ ${historyContext}
       },
       {
         name: "web_glance",
-        description: "Search public web snippets for a short topic. Use ONLY for public, non-private topics when the user explicitly asks for web or current information. Do not call this during silence fillers.",
+        description: "Search public web snippets for a short topic. Use for public, non-private topics, including quiet idle reading. Do not use it for private user data.",
         parameters: {
           type: Type.OBJECT,
           properties: {
@@ -2683,12 +2687,13 @@ ${historyContext}
                 },
                 {
                   name: "whatsapp_action",
-                   description: "Execute real WhatsApp operations via the WhatsApp backend (whatsapp.eburon.ai). Call this when the user asks you to read their chats, send a message, find a contact, or do anything on WhatsApp. The user asking IS permission — execute immediately. Only actions the user has enabled in their permission toggles will work.",
+                    description: "Execute real WhatsApp operations via the WhatsApp backend (whatsapp.eburon.ai). ONLY call this when the user has expressed a clear, direct intent to perform a specific WhatsApp operation (e.g., reading chats, sending a message, finding a contact). The user's direct request IS your permission. Only actions the user has enabled in their permission toggles will work.",
                   parameters: {
                     type: Type.OBJECT,
                     properties: {
-                      action: { type: Type.STRING, description: "The WhatsApp action: sendMessage, readChats, getContacts, addContact, getGroups, sendGroupMessage, readGroupChat, getMessageHistory. IMPORTANT: For getContacts, 'getContacts' returns contacts with TWO name fields for each person: 'name' is what the user saved the contact as in their phonebook, and 'notify' is the contact's own public WhatsApp profile name (what they chose for themselves). Always show BOTH names when listing contacts. For readChats and getMessageHistory: messages include a 'fromMe' field — true means the user sent it, false means the other person sent it." },
-                      to: { type: Type.STRING, description: "Recipient phone number or JID (for sendMessage, addContact, getMessageHistory)" },
+                       action: { type: Type.STRING, description: "The WhatsApp action: sendMessage, readChats, getContacts, addContact, getGroups, sendGroupMessage, readGroupChat, getMessageHistory, getCalls. IMPORTANT: For getContacts, 'getContacts' returns contacts with TWO name fields for each person: 'name' is what the user saved the contact as in their phonebook, and 'notify' is the contact's own public WhatsApp profile name (what they call themselves, also called pushName). Always show BOTH names when listing contacts. For readChats, getMessageHistory, and getCalls: messages/calls include a 'fromMe' boolean field: true means the current user (you, Beatrice) sent it/made the call, false means the other person/contact sent it/received the call." },
+                       to: { type: Type.STRING, description: "Recipient JID (e.g., 1234567890@s.whatsapp.net) or international phone number (e.g., 447700900000). CRITICAL: Always include the country code. If the user provides a local number, you MUST prepend the country code from their own WhatsApp number (waPhone). Prefer using the full JID found in getContacts." },
+
                       text: { type: Type.STRING, description: "Message text (for sendMessage, sendGroupMessage). IMPORTANT — Before sending, you MUST first call getMessageHistory to read the user's WhatsApp History (their real WhatsApp conversations from the WhatsApp server — NOT the BeatriceAppConversations History). Look for messages with fromMe:true — those are the user's own outgoing WhatsApp messages. Analyze their real WhatsApp style: tone, abbreviations, emoji, punctuation, caps, language mixing, length, and how they talk to that person. Then write in THAT exact style. NEVER write in your own voice — become the user's WhatsApp voice." },
                       name: { type: Type.STRING, description: "Contact/group name (for addContact, getMessageHistory). For addContact: Baileys/WhatsApp Web does NOT support adding contacts — it will return an error. Tell the user to save the contact on their phone instead." },
                       number: { type: Type.STRING, description: "Contact phone number (for addContact)" },

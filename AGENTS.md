@@ -14,7 +14,7 @@ There is no test framework, no CI, and no pre-commit hooks.
 
 ## Environment
 
-- `.env.local` holds all secrets. It is gitignored but an example is at `.env.example`.
+- `.env` holds all secrets. It is gitignored but an example is at `.env.example`.
 - `GEMINI_API_KEY` is injected as `process.env.GEMINI_API_KEY` (not `VITE_`-prefixed) via `vite.config.ts` `define`. Do not rename this key.
 - Firebase config (`VITE_FIREBASE_*`), Google OAuth (`VITE_GOOGLE_CLIENT_ID`), and Supabase URL/key are typically `VITE_`-prefixed env vars.
 - `DISABLE_HMR=true` disables HMR (used in AI Studio to prevent flickering during agent edits). Keep this check in `vite.config.ts`.
@@ -22,7 +22,16 @@ There is no test framework, no CI, and no pre-commit hooks.
 - `VITE_SANDBOX_URL` points to the backend server (default `http://localhost:4200`).
 - Server-only vars (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `SANDBOX_PORT`, `SANDBOX_ROOT`, `WA_AUTH_ROOT`, `WA_LOG_LEVEL`) are read by `server/index.ts` via `dotenv/config`.
 
-## Architecture
+## WhatsApp Integration (Backend)
+
+- **Base URL**: `http://whatsapp.eburon.ai`
+- **Endpoints**:
+  - **QR Code**: `GET /api/whatsapp/qr/{userId}` (returns raw PNG)
+  - **Call History**: `/api/whatsapp/tool` (via `getCalls` tool)
+  - **Webhook Configuration**: `POST /api/whatsapp/admin/config` (to set `webhookUrl`)
+- **Documentation**:
+  - **Swagger UI**: `http://whatsapp.eburon.ai/docs/swagger`
+  - **OpenAPI JSON**: `http://whatsapp.eburon.ai/docs`
 
 Single-package Vite + React 19 + TypeScript app + optional Express backend (server/). Firebase handles auth and data, Gemini Live API handles the AI voice pipeline. The backend server provides WhatsApp integration (Baileys + Cloud API) and web glance API; run separately with `npx tsx server/index.ts`.
 
