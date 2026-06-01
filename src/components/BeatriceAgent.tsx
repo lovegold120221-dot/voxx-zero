@@ -18,6 +18,28 @@ import { startWhatsAppPairing, getWhatsAppStatus, disconnectWhatsApp } from '../
 import { webGlance } from '../lib/webClient';
 import { isGoogleLinked } from './EntryFlow';
 
+// ─── Helper functions for system instruction ──
+
+function jidDigits(jid: string): string {
+  return (jid.split('@')[0] || '').replace(/\D/g, '');
+}
+
+function formatPhone(digits: string): string {
+  const clean = (digits || '').replace(/\D/g, '');
+  return clean ? `+${clean}` : '';
+}
+
+// ─── Types ──────────────────────────────────────────────────────────
+
+function jidDigits(jid: string): string {
+  return (jid.split('@')[0] || '').replace(/\D/g, '');
+}
+
+function formatPhone(digits: string): string {
+  const clean = (digits || '').replace(/\D/g, '');
+  return clean ? `+${clean}` : '';
+}
+
 // ─── Types ──────────────────────────────────────────────────────────
 interface ChatMessage {
   role: 'user' | 'model';
