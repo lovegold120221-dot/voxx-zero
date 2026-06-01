@@ -123,3 +123,54 @@ export async function sendWhatsAppTestMessage(userId: string, to: string, text: 
     body: JSON.stringify({ userId, to, text }),
   });
 }
+
+// ── Typed read helpers for the WhatsApp chat-list UI ──
+// These mirror the backend WaChatSummary / WaRecentMessage shapes in server/whatsapp.ts.
+
+export interface WaChatSummary {
+  id: string;            // chat JID (e.g. 32470...@s.whatsapp.net or ...@g.us)
+  name: string;          // contact saved name / group subject / fallback JID
+  unreadCount: number;
+  lastMessage: string;
+  timestamp: number;     // ms epoch
+  isGroup: boolean;
+}
+
+export interface WaMessageRecord {
+  id: string;
+  chatId: string;
+  from: string;          // sender JID/participant
+  body: string;
+  timestamp: number;     // ms epoch
+  fromMe: boolean;       // true = owner (current user) sent it
+  isGroup: boolean;
+  isMedia: boolean;
+}
+
+/**
+ * Fetch the WhatsApp chat list (gated server-side by the `read_chats` permission and pairing).
+ * Returns `{ ok:false, error }` when the permission is off or WhatsApp is not paired.
+ */
+export async function fetchWhatsAppChats(
+  userId: string,
+  permissions: Record<string, boolean>,
+  limit = 30,
+): Promise<{ ok: boolean; chats: WaChatSummary[]; error?: string }> {
+  const res = await callWhatsAppTool(userId, 'readChats', { limit }, permissions);
+  if (res?.ok) return { ok: true, chats: Array.isArray(res.chats) ? res.chats : [] };
+  return { ok: false, chats: [], error: res?.error || 'Failed to load chats' };
+}
+
+/**
+ * Fetch the message history for a single chat JID (gated server-side by `view_message_history`).
+ */
+export async function fetchWhatsAppHistory(
+  userId: string,
+  chatId: string,
+  permissions: Record<string, boolean>,
+  limit = 50,
+): Promise<{ ok: boolean; messages: WaMessageRecord[]; error?: string }> {
+  const res = await callWhatsAppTool(userId, 'getMessageHistory', { chatId, limit }, permissions);
+  if (res?.ok) return { ok: true, messages: Array.isArray(res.messages) ? res.messages : [] };
+  return { ok: false, messages: [], error: res?.error || 'Failed to load conversation' };
+}

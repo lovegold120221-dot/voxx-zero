@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
+import { AnimatePresence } from 'motion/react';
+import { MessageCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { startWhatsAppPairing, getWhatsAppStatus, disconnectWhatsApp } from '../lib/whatsappClient';
+import { WhatsAppChatList } from './WhatsAppChatList';
 
 interface WhatsAppSettingsProps {
   userId: string;

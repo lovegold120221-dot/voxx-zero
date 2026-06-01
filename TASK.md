@@ -142,3 +142,31 @@
 - Real data/API credential check: No credentials exposed in documentation. Env var descriptions in .env.example preserved.
 - Known issues: AGENTS.md previously listed `gemini-3.1-flash-live-preview` which does not match the actual code. Now corrected to `gemini-2.5-flash-native-audio-preview-09-2025`.
 - Next step: Future docs maintenance — keep overview.md in sync as the codebase evolves.
+
+## TASK-20260601-190000: WhatsApp Chat-List UI + Beatrice Identity/JID Awareness
+
+### START RECORD
+- STATUS: STARTED
+- Start time: 2026-06-01T19:00:00Z
+- User request: Display the WhatsApp chat list styled like the real WhatsApp UI so Beatrice clearly knows who is who (current user/owner vs other contacts) and can see past conversations. Additionally: Beatrice does not send chats correctly — make it explicit she must use a JID and that numbers require the starting country code.
+- Last known state: Docs sync task COMPLETED. App working (auth, voice agent, WhatsApp pairing + permission toggles only — no chat-list UI).
+- Approved scope (via question tool): (1) full-screen WhatsApp view launched from the WhatsApp settings card; (2) chat list + conversation thread with sender-aligned bubbles; (3) also strengthen Beatrice's AI context (owner identity + sender labels).
+- Preservation constraints: Do NOT alter VOICE_PERSONALITY_PROMPT. Do not change existing CSS/components beyond additive wiring. Preserve backend API contracts, permission gating, Baileys/Cloud lifecycle. No mock data — chat list is bounded by backend's ~250 recent messages and names-only (no profile photos).
+- Files/directories to inspect: src/lib/whatsappClient.ts, src/components/WhatsAppSettings.tsx, src/components/BeatriceAgent.tsx (system instruction ~2051-2167, whatsapp_action schema ~2677-2695, handler ~3233), server/whatsapp.ts (data model), server/whatsapp-tools.ts, server/index.ts (routes).
+- Success criteria:
+  - New WhatsApp-style chat list + thread renders, gated correctly on pairing + read_chats/view_message_history permissions
+  - Owner vs contact visually unambiguous (You = right bubble; contact = left; owner number shown)
+  - Beatrice system instruction + whatsapp_action schema explicitly require JID + full international number with country code
+  - `npm run lint` (tsc --noEmit) passes; no regressions to existing CSS/UI/flows
+
+### TODO
+- [ ] Add typed chat/history fetch helpers to whatsappClient.ts
+- [ ] Create WhatsAppChatList.tsx (list + thread, real WhatsApp look)
+- [ ] Wire View Chats button + overlay + onEnablePermission into WhatsAppSettings.tsx
+- [ ] Strengthen BeatriceAgent system instruction (owner identity + JID/country code)
+- [ ] Clarify whatsapp_action tool schema (JID + country code)
+- [ ] Validate (tsc --noEmit), verify no unrelated changes
+- [ ] Write final report
+
+### FINAL REPORT
+- STATUS: IN PROGRESS
