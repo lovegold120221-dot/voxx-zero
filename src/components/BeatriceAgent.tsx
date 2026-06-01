@@ -3697,10 +3697,10 @@ ${historyContext}
         <div className="flex items-center">
             <button
               onClick={() => setShowSettings(true)}
-              className="p-1.5 -ml-1.5 rounded-xl text-white/40 hover:text-white/70 hover:bg-white/5 transition-all duration-300 active:scale-90"
+              className="p-1.5 -ml-1.5 rounded-xl text-white/90 hover:text-white hover:bg-white/5 transition-all duration-300 active:scale-90"
               aria-label="Open Settings"
             >
-              <Settings className="w-5 h-5 sm:w-5 sm:h-5" />
+              <Settings className="w-[35px] h-[35px]" />
             </button>
         </div>
 
@@ -3712,13 +3712,13 @@ ${historyContext}
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowProfilePage(true)}
-            className="w-7 h-7 sm:w-7 sm:h-7 rounded-full bg-white/5 border border-white/[0.08] overflow-hidden flex items-center justify-center hover:border-white/20 transition-all duration-300 active:scale-90"
+            className="w-[43px] h-[43px] rounded-full bg-white/5 border border-white/[0.08] overflow-hidden flex items-center justify-center hover:border-white/20 transition-all duration-300 active:scale-90"
             aria-label="User Profile"
           >
             {user.photoURL ? (
               <img src={user.photoURL} alt="Profile" className="w-full h-full object-cover" />
             ) : (
-              <span className="text-white/40 text-[11px] font-['SF_Pro_Text',system-ui,sans-serif] font-semibold">{user.displayName?.charAt(0) || 'M'}</span>
+              <span className="text-white/90 text-base font-['SF_Pro_Text',system-ui,sans-serif] font-semibold">{user.displayName?.charAt(0) || 'M'}</span>
             )}
           </button>
         </div>
@@ -3787,9 +3787,9 @@ ${historyContext}
 
           <button
             onClick={() => setShowChatPage(true)}
-            className="flex flex-col items-center justify-center transition-all duration-300 text-white/40 hover:text-white/70"
+            className="flex flex-col items-center justify-center transition-all duration-300 text-white/90 hover:text-white"
           >
-            <MessageSquare className="w-5 h-5 sm:w-5 sm:h-5 mb-0.5" />
+            <MessageSquare className="w-[35px] h-[35px] mb-1" />
             <span className="text-[9px] font-['SF_Pro_Text',system-ui,sans-serif] font-semibold tracking-normal">Chat</span>
           </button>
 
@@ -3825,13 +3825,14 @@ ${historyContext}
 
           <button
             onClick={() => setShowVideoPage(true)}
-            className="flex flex-col items-center justify-center transition-all duration-300 text-white/40 hover:text-white/70"
+            className="flex flex-col items-center justify-center transition-all duration-300 text-white/90 hover:text-white"
           >
-            <Video className="w-5 h-5 sm:w-5 sm:h-5 mb-0.5" />
+            <Video className="w-[35px] h-[35px] mb-1" />
             <span className="text-[9px] font-['SF_Pro_Text',system-ui,sans-serif] font-semibold tracking-normal">Video</span>
           </button>
         </div>
       </footer>
+
 
       <canvas ref={canvasRef} className="hidden" />
       <video ref={videoRef} className="hidden" autoPlay playsInline muted />
