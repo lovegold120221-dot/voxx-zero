@@ -4148,46 +4148,6 @@ ${historyContext}
                 </div>
               </section>
 
-
-              {/* Room Tone */}
-              <section className="space-y-3">
-                <h2 className="text-[13px] uppercase tracking-wide text-zinc-500 font-medium px-4 mb-2">Room Tone</h2>
-                <div className="bg-[#1C1C1E] rounded-[20px] overflow-hidden">
-                  <div className="p-5 border-b border-white/[0.03] flex items-center justify-between">
-                    <div className="flex flex-col gap-0.5 pr-4">
-                      <span className="text-[15px] text-white font-medium tracking-wide">Enable Ambient Sound</span>
-                      <span className="text-[13px] text-zinc-400 font-medium leading-relaxed">Add a calming background office/cafe bed during calls</span>
-                    </div>
-                    <button
-                      onClick={() => setAmbientEnabled(v => !v)}
-                      aria-pressed={ambientEnabled}
-                      aria-label="Toggle Ambient Sound"
-                      title="Toggle Ambient Sound"
-                      className={`w-10 h-6 rounded-full transition-all duration-300 flex items-center shrink-0 cursor-pointer ${ambientEnabled ? 'bg-[#d0a78b] shadow-[0_0_10px_rgba(208,167,139,0.3)]' : 'bg-zinc-800'}`}
-                    >
-                      <span className={`block w-4.5 h-4.5 rounded-full bg-white transition-all duration-300 shadow-md ${ambientEnabled ? 'ml-[18px]' : 'ml-[3px]'}`} />
-                    </button>
-                  </div>
-                  <div className="p-5 flex items-center gap-4">
-                    <label htmlFor="ambient-volume-slider" className="text-[13px] uppercase tracking-wider text-zinc-400 font-semibold shrink-0 w-8">Vol</label>
-                    <input
-                      id="ambient-volume-slider"
-                      type="range"
-                      min="0"
-                      max="20"
-                      step="1"
-                      value={ambientVolume}
-                      onChange={(e) => setAmbientVolume(parseInt(e.target.value, 10))}
-                      disabled={!ambientEnabled}
-                      className="w-full h-1.5 bg-black/40 border border-white/[0.05] accent-[#d0a78b] rounded-lg appearance-none cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-300"
-                      aria-label="Ambient Volume"
-                      title="Ambient Volume"
-                    />
-                    <span className="text-sm font-mono font-bold text-zinc-300 shrink-0 w-6 text-right">{ambientVolume}</span>
-                  </div>
-                </div>
-              </section>
-
               <WhatsAppSettings 
                 userId={user.uid} 
                 waPermissions={waPermissions}
