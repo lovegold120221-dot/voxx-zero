@@ -690,6 +690,22 @@ Produce one finished standalone file now.
   return extractHtmlArtifact(content);
 };
 
+function VisualizerBars({ volumes, side }: { volumes: number[], side: 'left' | 'right' }) {
+  const bars = side === 'left' ? [...volumes].reverse() : volumes;
+  return (
+    <div className={`flex items-center gap-1 sm:gap-1.5 ${side === 'left' ? 'justify-end' : 'justify-start'} w-16 sm:w-24`}>
+      {bars.map((v, i) => (
+        <motion.div
+          key={i}
+          animate={{ height: Math.max(4, v * 40) }}
+          transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+          className="w-1 sm:w-1.5 rounded-full bg-gradient-to-b from-[#a3d944] to-[#29abe2] opacity-80"
+        />
+      ))}
+    </div>
+  );
+}
+
 export function BeatriceAgent({
   user,
   googleToken,
@@ -3771,69 +3787,45 @@ ${historyContext}
 
           <button
             onClick={() => setShowChatPage(true)}
-            className={`absolute left-4 sm:left-[44px] flex flex-col items-center justify-center transition-all duration-300 ${
-              showChatPage
-                ? 'text-[#d0a78b]'
-                : 'text-white/40 hover:text-white/70'
-            }`}
+            className="flex flex-col items-center justify-center transition-all duration-300 text-white/40 hover:text-white/70"
           >
             <MessageSquare className="w-5 h-5 sm:w-5 sm:h-5 mb-0.5" />
             <span className="text-[9px] font-['SF_Pro_Text',system-ui,sans-serif] font-semibold tracking-normal">Chat</span>
           </button>
 
-          <button
-            onClick={isActive ? stopSession : startSession}
-            disabled={connecting}
-            aria-label={isActive ? "Stop Voice Assistant" : "Start Voice Assistant"}
-            title={isActive ? "Stop Voice Assistant" : "Start Voice Assistant"}
-            className={`absolute left-1/2 -translate-x-1/2 bottom-[38px] sm:bottom-[52px] w-14 h-14 sm:w-[74px] sm:h-[74px] rounded-full flex flex-col items-center justify-center shadow-2xl transition-all duration-300 border-[3px] z-30 ${
-              isActive
-                ? 'bg-zinc-900 text-[#d0a78b] border-[#d0a78b]/30 shadow-[#d0a78b]/10'
-                : 'bg-[#d0a78b] text-black hover:bg-[#ebd0bc] shadow-lg shadow-[#d0a78b]/30'
-            }`}
-          >
-            {connecting ? (
-              <Loader2 className="w-5 h-5 sm:w-7 sm:h-7 animate-spin" />
-            ) : isActive ? (
-              <div className="absolute inset-0 rounded-full flex items-center justify-center">
-                <canvas
-                  ref={stopCanvasRef}
-                  className="absolute inset-0 w-full h-full pointer-events-none"
-                  width={80}
-                  height={80}
-                />
-                <motion.div
-                  animate={{ scale: [1, 1.2, 1] }}
-                  transition={{ repeat: Infinity, duration: 1.5 }}
-                  className="z-10"
-                >
-                  <Circle className="w-6 h-6 sm:w-8 sm:h-8 fill-red-500 text-red-500" />
-                </motion.div>
-              </div>
-            ) : (
-              <motion.div
-                animate={{ 
-                  scale: [1, 1.05, 1],
-                }}
-                transition={{ 
-                  repeat: Infinity, 
-                  duration: 2, 
-                  ease: "easeInOut" 
-                }}
-                className="flex items-center justify-center"
-              >
-                <Mic className="w-7 h-7 sm:w-9 sm:h-9" />
-              </motion.div>
-            )}
-          </button>
+          {/* Center Voice Button with Visualizer */}
+          <div className="absolute left-1/2 -translate-x-1/2 bottom-[36px] sm:bottom-[48px] flex items-center gap-4 sm:gap-8 z-30">
+            <VisualizerBars volumes={volumes.slice(0, 5)} side="left" />
+            
+            <motion.button
+              onClick={isActive ? stopSession : startSession}
+              disabled={connecting}
+              aria-label={isActive ? "Stop Voice Assistant" : "Start Voice Assistant"}
+              title={isActive ? "Stop Voice Assistant" : "Start Voice Assistant"}
+              className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-[#a3d944] via-[#4dbd79] to-[#29abe2] flex items-center justify-center shadow-2xl transition-all duration-300 border-2 border-white/10 hover:brightness-105 active:scale-95"
+            >
+              {connecting ? (
+                <Loader2 className="w-6 h-6 sm:w-8 sm:h-8 animate-spin text-white" />
+              ) : isActive ? (
+                <div className="relative flex items-center justify-center">
+                   <motion.div
+                    animate={{ scale: [1, 1.15, 1] }}
+                    transition={{ repeat: Infinity, duration: 1.5 }}
+                  >
+                    <Mic className="w-7 h-7 sm:w-9 sm:h-9 text-white drop-shadow-lg" strokeWidth={1.5} />
+                  </motion.div>
+                </div>
+              ) : (
+                <Mic className="w-7 h-7 sm:w-9 sm:h-9 text-white/90 drop-shadow-md" strokeWidth={1.5} />
+              )}
+            </motion.button>
+
+            <VisualizerBars volumes={volumes.slice(6, 11)} side="right" />
+          </div>
 
           <button
             onClick={() => setShowVideoPage(true)}
-            className={`absolute right-4 sm:right-[44px] flex flex-col items-center justify-center transition-all duration-300 ${
-              showVideoPage
-                ? 'text-[#d0a78b]'
-                : 'text-white/40 hover:text-white/70'
-            }`}
+            className="flex flex-col items-center justify-center transition-all duration-300 text-white/40 hover:text-white/70"
           >
             <Video className="w-5 h-5 sm:w-5 sm:h-5 mb-0.5" />
             <span className="text-[9px] font-['SF_Pro_Text',system-ui,sans-serif] font-semibold tracking-normal">Video</span>
