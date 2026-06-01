@@ -1128,6 +1128,13 @@ export function BeatriceAgent({
     }
   };
 
+  const handleTapVideo = async () => {
+    setShowVideoPage(true);
+    if (!isCameraActive) {
+      await toggleCamera();
+    }
+  };
+
   const switchCameraMode = async (mode: 'user' | 'environment') => {
     if (videoStreamRef.current) {
       videoStreamRef.current.getTracks().forEach(t => t.stop());
@@ -3824,7 +3831,7 @@ ${historyContext}
           </div>
 
           <button
-            onClick={() => setShowVideoPage(true)}
+            onClick={handleTapVideo}
             className="flex flex-col items-center justify-center transition-all duration-300 text-white/55 hover:text-white/90 active:scale-95"
           >
             <Video className="w-[35px] h-[35px] mb-1" strokeWidth={1.5} />
