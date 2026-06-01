@@ -3820,7 +3820,7 @@ ${historyContext}
                   transition={{ repeat: Infinity, duration: 2 }}
                   className="z-10"
                 >
-                  <Square className="w-6 h-6 sm:w-8 sm:h-8 fill-red-500 text-red-500 rounded-sm" strokeWidth={1} />
+                  <Square className="w-6 h-6 sm:w-8 sm:h-8 fill-red-500 text-red-500 rounded-none" strokeWidth={1} />
                 </motion.div>
 
                 </div>
