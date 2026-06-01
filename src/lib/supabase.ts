@@ -15,13 +15,13 @@ function getSupabaseKey(): string {
 
 export const supabase = createClient(getSupabaseUrl(), getSupabaseKey());
 
-export async function saveToolResult(userId: string, toolName: string, content: string, fileType: string) {
+export async function saveToolResult(userId: string, toolName: string, content: any, fileType: string) {
   const { data, error } = await supabase
     .from('tool_outputs')
     .insert({
       user_id: userId,
       tool_name: toolName,
-      content,
+      content: typeof content === 'string' ? content : JSON.stringify(content),
       file_type: fileType,
     })
     .select('id')
