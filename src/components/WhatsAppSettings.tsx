@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { AnimatePresence } from 'motion/react';
-import { MessageCircle } from 'lucide-react';
+import { MessageCircle, Send, MessageSquare, User, UserPlus, Users, MessageSquareText, Clock, Phone, Video } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { startWhatsAppPairing, getWhatsAppStatus, disconnectWhatsApp } from '../lib/whatsappClient';
 import { WhatsAppChatList } from './WhatsAppChatList';
@@ -306,30 +306,33 @@ export function WhatsAppSettings({ userId, waPermissions, onTogglePermission }: 
         </div>
 
         {waStatus === 'paired' && (
-          <div className="border-t border-white/[0.04] bg-white/[0.005]">
+          <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl overflow-hidden mt-4">
             {[
-              { key: 'send_messages', label: 'Send Messages', desc: 'Allow Beatrice to send texts on your behalf' },
-              { key: 'read_chats', label: 'Read Chats', desc: 'Scan and digest incoming WhatsApp messages' },
-              { key: 'access_contacts', label: 'Access Contacts', desc: 'Search and link contact records' },
-              { key: 'manage_contacts', label: 'Manage Contacts', desc: 'Register or update contacts' },
-              { key: 'access_groups', label: 'Access Groups', desc: 'Browse joined groups' },
-              { key: 'send_group_messages', label: 'Send Group Messages', desc: 'Post announcements or chat replies to groups' },
-              { key: 'read_group_chats', label: 'Read Group Chats', desc: 'Follow and analyze group discussions' },
-              { key: 'view_message_history', label: 'View Message History', desc: 'Read past conversation logs' },
-              { key: 'make_calls', label: 'Make Phone Calls', desc: 'Dial contacts from your phonebook via the native dialer' },
-              { key: 'make_whatsapp_calls', label: 'WhatsApp Calls', desc: 'Initiate WhatsApp voice or video calls to contacts' },
-            ].map((p, i, arr) => (
-              <div key={p.key} className={`px-5 py-4 flex items-center justify-between transition-colors duration-300 hover:bg-white/[0.01] ${i !== arr.length - 1 ? 'border-b border-white/[0.03]' : ''}`}>
-                <div className="flex flex-col gap-0.5 pr-4">
-                  <span className="text-[14px] text-white font-['SF_Pro_Text',system-ui,sans-serif] font-semibold tracking-tight">{p.label}</span>
-                  <span className="text-[11px] text-white/40 font-['SF_Pro_Text',system-ui,sans-serif] font-medium leading-relaxed">{p.desc}</span>
+              { key: 'send_messages', label: 'Send Messages', desc: 'Send texts on your behalf', icon: Send },
+              { key: 'read_chats', label: 'Read Chats', desc: 'Scan and digest incoming messages', icon: MessageSquare },
+              { key: 'access_contacts', label: 'Access Contacts', desc: 'Search and link contact records', icon: User },
+              { key: 'manage_contacts', label: 'Manage Contacts', desc: 'Register or update contacts', icon: UserPlus },
+              { key: 'access_groups', label: 'Access Groups', desc: 'Browse joined groups', icon: Users },
+              { key: 'send_group_messages', label: 'Send Group Messages', desc: 'Post to groups', icon: Send },
+              { key: 'read_group_chats', label: 'Read Group Chats', desc: 'Analyze group discussions', icon: MessageSquareText },
+              { key: 'view_message_history', label: 'View Message History', desc: 'Read past conversation logs', icon: Clock },
+              { key: 'make_calls', label: 'Make Phone Calls', desc: 'Dial contacts via native dialer', icon: Phone },
+              { key: 'make_whatsapp_calls', label: 'WhatsApp Calls', desc: 'Initiate WhatsApp calls', icon: Video },
+            ].map((p) => (
+              <div key={p.key} className="px-5 py-4 flex items-center justify-between border-b border-white/[0.03] last:border-b-0 hover:bg-white/[0.03] transition-colors">
+                <div className="flex items-center gap-4">
+                  <div className="w-9 h-9 rounded-xl bg-white/[0.03] flex items-center justify-center shrink-0 text-white/50 border border-white/[0.05]">
+                    <p.icon className="w-5 h-5" strokeWidth={1.5} />
+                  </div>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-[14px] text-white/90 font-semibold tracking-tight">{p.label}</span>
+                    <span className="text-[11px] text-white/40 font-medium leading-relaxed">{p.desc}</span>
+                  </div>
                 </div>
                 <button
                   onClick={() => onTogglePermission(p.key)}
                   aria-pressed={waPermissions[p.key]}
-                  aria-label={`Toggle ${p.label} permission`}
-                  title={`Toggle ${p.label} permission`}
-                  className={`w-10 h-6 rounded-full transition-all duration-300 flex items-center shrink-0 cursor-pointer ${waPermissions[p.key] ? 'bg-[#d0a78b] shadow-[0_0_10px_rgba(208,167,139,0.3)]' : 'bg-zinc-800'}`}
+                  className={`w-10 h-6 rounded-full transition-all duration-300 flex items-center shrink-0 cursor-pointer ${waPermissions[p.key] ? 'bg-[#d0a78b]' : 'bg-white/[0.1]'}`}
                 >
                   <span className={`block w-4.5 h-4.5 rounded-full bg-white transition-all duration-300 shadow-md ${waPermissions[p.key] ? 'ml-[18px]' : 'ml-[3px]'}`} />
                 </button>
