@@ -5,7 +5,7 @@ import { supabase, handleDbError } from '../lib/supabase';
 import { GoogleGenAI, LiveServerMessage, Modality, Type, FunctionDeclaration } from '@google/genai';
 import { AmbientConversationBed, AudioRecorder, AudioStreamer } from '../lib/audio';
 import { listKnowledgeFiles, fetchKnowledgeFileContent } from '../lib/supabaseStorage';
-import { Loader2, Mic, Square, Check, Settings, X, Save, Video, MessageSquare } from 'lucide-react';
+import { Loader2, Mic, Square, Check, Settings, X, Save, Video, MessageSquare, Clipboard } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { UnifiedTranscript } from './UnifiedTranscript';
 import { saveOutput, uploadToDrive } from '../lib/workspace';
@@ -773,6 +773,9 @@ export function BeatriceAgent({
   const [personaName, setPersonaName] = useState("Beatrice");
   const [customPrompt, setCustomPrompt] = useState("");
   const [selectedVoice, setSelectedVoice] = useState("Aoede");
+  const [themePreference, setThemePreference] = useState<'system' | 'light' | 'dark'>(() => {
+    try { return (localStorage.getItem('beatrice_theme') as any) || 'system'; } catch { return 'system'; }
+  });
   const [contextSize, setContextSize] = useState(20);
   const [userTitle, setUserTitle] = useState(() => {
     try { return localStorage.getItem('beatrice_userTitle') || 'Boss'; } catch { return 'Boss'; }
@@ -2013,6 +2016,36 @@ export function BeatriceAgent({
     return messages.filter(m => m.sessionId === selectedSessionId);
   }, [messages, selectedSessionId]);
 
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+  };
+
+  const SkillItem = ({ label, desc, enabled, copyText }: { label: string, desc: string, enabled?: boolean, copyText: string }) => (
+    <div className="group px-5 py-3.5 flex items-center justify-between border-b border-white/[0.03] last:border-b-0 hover:bg-white/[0.03] transition-colors">
+      <div className="flex flex-col gap-0.5 pr-4">
+        <span className="text-[13px] text-zinc-100 font-bold tracking-wide">{label}</span>
+        <span className="text-[10px] text-zinc-500 font-medium">{desc}</span>
+      </div>
+      <div className="flex items-center gap-2">
+        {typeof enabled !== 'undefined' && (
+          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full ${enabled ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-zinc-800/50 border border-zinc-700/30'}`}>
+            <div className={`w-1.5 h-1.5 rounded-full ${enabled ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.5)]' : 'bg-zinc-600'}`} />
+            <span className={`text-[10px] font-bold uppercase tracking-wider ${enabled ? 'text-emerald-400' : 'text-zinc-500'}`}>
+              {enabled ? 'On' : 'Off'}
+            </span>
+          </div>
+        )}
+        <button 
+          onClick={() => copyToClipboard(copyText)}
+          className="p-1.5 rounded-full text-zinc-600 hover:text-[#d0a78b] hover:bg-white/5 transition-all opacity-0 group-hover:opacity-100"
+          aria-label={`Copy ${label} info`}
+        >
+          <Clipboard className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    </div>
+  );
+
   const saveSettings = async (callbacks?: { onSuccess?: () => void; onError?: (msg: string) => void }) => {
     setIsSaving(true);
 
@@ -2030,11 +2063,13 @@ export function BeatriceAgent({
           whatsapp_permissions: waPermissions,
           whatsapp_paired: waStatus === 'paired',
           whatsapp_phone: waPhone || null,
+          theme: themePreference,
           updated_at: new Date().toISOString(),
         });
 
       try { localStorage.setItem('beatrice_userTitle', userTitle); } catch {}
       try { localStorage.setItem('beatrice_language', authLanguage); } catch {}
+      try { localStorage.setItem('beatrice_theme', themePreference); } catch {}
       callbacks?.onSuccess?.();
       setShowSettings(false);
     } catch (e) {
@@ -3916,6 +3951,8 @@ ${historyContext}
             setSelectedVoice={setSelectedVoice}
             saveSettings={saveSettings}
             isSaving={isSaving}
+            themePreference={themePreference}
+            onSetThemePreference={setThemePreference}
           />
         )}
       </AnimatePresence>
@@ -4029,40 +4066,38 @@ ${historyContext}
               
               {/* Google Integration */}
               <section className="space-y-3">
-                <h2 className="text-[11px] font-['SF_Pro_Text',system-ui,sans-serif] font-bold tracking-[0.2em] uppercase text-white/40 mb-3 px-1">Google Integration</h2>
-                <div className="bg-white/[0.02] backdrop-blur-md border border-white/[0.04] rounded-3xl shadow-[0_8px_32px_rgba(0,0,0,0.4)] overflow-hidden transition-all duration-300 hover:border-white/[0.07] hover:bg-white/[0.03]">
-                  <div className="p-5 flex flex-col gap-4">
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-2 bg-black/35 px-3 py-1.5 rounded-full border border-white/[0.02]">
-                        <div className={`w-1.5 h-1.5 rounded-full ${isGoogleLinked(user) ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)] animate-pulse' : 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]'}`} />
-                        <span className={`text-[11px] font-bold uppercase tracking-wider ${isGoogleLinked(user) ? 'text-emerald-400' : 'text-amber-500'}`}>
-                          {isGoogleLinked(user) ? 'Authenticated' : 'Connection Required'}
-                        </span>
-                      </div>
-                      <button
-                        onClick={onLogin}
-                        className="px-4 py-2 bg-[#d0a78b] hover:brightness-110 active:scale-95 rounded-xl text-xs font-bold text-black shadow-[0_4px_16px_rgba(208,167,139,0.2)] hover:shadow-[0_4px_20px_rgba(208,167,139,0.35)] transition-all duration-200 cursor-pointer"
-                      >
-                        {googleToken ? 'Connected' : 'Connect Now'}
-                      </button>
+                <h2 className="text-[13px] uppercase tracking-wide text-zinc-500 font-medium px-4 mb-2">Google Integration</h2>
+                <div className="bg-[#1C1C1E] rounded-[20px] overflow-hidden p-5 flex flex-col gap-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-2 bg-black/35 px-3 py-1.5 rounded-full border border-white/[0.02]">
+                      <div className={`w-1.5 h-1.5 rounded-full ${isGoogleLinked(user) ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)] animate-pulse' : 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]'}`} />
+                      <span className={`text-[11px] font-bold uppercase tracking-wider ${isGoogleLinked(user) ? 'text-emerald-400' : 'text-amber-500'}`}>
+                        {isGoogleLinked(user) ? 'Authenticated' : 'Connection Required'}
+                      </span>
                     </div>
-                    <p className="text-[11px] text-zinc-400 leading-relaxed font-medium">
-                      {googleToken
-                        ? 'Gmail, Calendar, Drive, Tasks, and YouTube are connected.'
-                        : 'Connect to enable Gmail, Calendar, Drive, Tasks, and YouTube on Beatrice\'s voice pipeline.'}
-                    </p>
+                    <button
+                      onClick={onLogin}
+                      className="px-4 py-2 bg-[#d0a78b] hover:brightness-110 active:scale-95 rounded-xl text-xs font-bold text-black shadow-[0_4px_16px_rgba(208,167,139,0.2)] hover:shadow-[0_4px_20px_rgba(208,167,139,0.35)] transition-all duration-200 cursor-pointer"
+                    >
+                      {googleToken ? 'Connected' : 'Connect Now'}
+                    </button>
                   </div>
+                  <p className="text-[13px] text-zinc-400 leading-relaxed font-medium">
+                    {googleToken
+                      ? 'Gmail, Calendar, Drive, Tasks, and YouTube are connected.'
+                      : 'Connect to enable Gmail, Calendar, Drive, Tasks, and YouTube on Beatrice\'s voice pipeline.'}
+                  </p>
                 </div>
               </section>
 
               {/* Room Tone */}
               <section className="space-y-3">
-                <h2 className="text-[11px] font-['SF_Pro_Text',system-ui,sans-serif] font-bold tracking-[0.2em] uppercase text-white/40 mb-3 px-1">Room Tone</h2>
-                <div className="bg-white/[0.02] backdrop-blur-md border border-white/[0.04] rounded-3xl shadow-[0_8px_32px_rgba(0,0,0,0.4)] overflow-hidden transition-all duration-300 hover:border-white/[0.07] hover:bg-white/[0.03]">
+                <h2 className="text-[13px] uppercase tracking-wide text-zinc-500 font-medium px-4 mb-2">Room Tone</h2>
+                <div className="bg-[#1C1C1E] rounded-[20px] overflow-hidden">
                   <div className="p-5 border-b border-white/[0.03] flex items-center justify-between">
                     <div className="flex flex-col gap-0.5 pr-4">
-                      <span className="text-[14px] text-zinc-100 font-bold tracking-wide">Enable Ambient Sound</span>
-                      <span className="text-[11px] text-zinc-400 font-medium leading-relaxed">Add a calming background office/cafe bed during calls</span>
+                      <span className="text-[15px] text-white font-medium tracking-wide">Enable Ambient Sound</span>
+                      <span className="text-[13px] text-zinc-400 font-medium leading-relaxed">Add a calming background office/cafe bed during calls</span>
                     </div>
                     <button
                       onClick={() => setAmbientEnabled(v => !v)}
@@ -4074,8 +4109,8 @@ ${historyContext}
                       <span className={`block w-4.5 h-4.5 rounded-full bg-white transition-all duration-300 shadow-md ${ambientEnabled ? 'ml-[18px]' : 'ml-[3px]'}`} />
                     </button>
                   </div>
-                  <div className="p-5 flex items-center gap-4 bg-white/[0.005]">
-                    <label htmlFor="ambient-volume-slider" className="text-[11px] uppercase tracking-wider text-zinc-400 font-semibold shrink-0 w-8">Vol</label>
+                  <div className="p-5 flex items-center gap-4">
+                    <label htmlFor="ambient-volume-slider" className="text-[13px] uppercase tracking-wider text-zinc-400 font-semibold shrink-0 w-8">Vol</label>
                     <input
                       id="ambient-volume-slider"
                       type="range"
@@ -4089,7 +4124,7 @@ ${historyContext}
                       aria-label="Ambient Volume"
                       title="Ambient Volume"
                     />
-                    <span className="text-xs font-mono font-bold text-zinc-300 shrink-0 w-6 text-right">{ambientVolume}</span>
+                    <span className="text-sm font-mono font-bold text-zinc-300 shrink-0 w-6 text-right">{ambientVolume}</span>
                   </div>
                 </div>
               </section>
@@ -4114,19 +4149,25 @@ ${historyContext}
                     { key: 'tasks', label: 'Tasks', desc: 'Manage to-do lists' },
                     { key: 'drive', label: 'Drive', desc: 'List and search files' },
                     { key: 'youtube', label: 'YouTube', desc: 'Search and discover videos' },
-                  ].map((s, i, arr) => (
-                    <div key={s.key} className={`px-5 py-3 flex items-center justify-between ${i !== arr.length - 1 ? 'border-b border-white/[0.03]' : ''}`}>
-                      <div className="flex flex-col gap-0.5 pr-4">
-                        <span className="text-[13px] text-zinc-200 font-bold tracking-wide">{s.label}</span>
-                        <span className="text-[10px] text-zinc-500 font-medium">{s.desc}</span>
-                      </div>
-                      <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full ${googleToken ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-zinc-800/50 border border-zinc-700/30'}`}>
-                        <div className={`w-1.5 h-1.5 rounded-full ${googleToken ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.5)]' : 'bg-zinc-600'}`} />
-                        <span className={`text-[10px] font-bold uppercase tracking-wider ${googleToken ? 'text-emerald-400' : 'text-zinc-500'}`}>
-                          {googleToken ? 'On' : 'Off'}
-                        </span>
-                      </div>
-                    </div>
+                  ].map((s) => (
+                    <SkillItem key={s.key} label={s.label} desc={s.desc} enabled={!!googleToken} copyText={`${s.label}: ${s.desc}`} />
+                  ))}
+
+                  {/* WhatsApp Skills */}
+                  <div className="p-4 border-b border-white/[0.03] border-t border-white/[0.06]">
+                    <span className="text-[10px] font-bold tracking-[0.15em] uppercase text-zinc-500">WhatsApp Skills</span>
+                  </div>
+                  {[
+                    { key: 'send_messages', label: 'Send Messages', desc: 'Send texts on your behalf' },
+                    { key: 'read_chats', label: 'Read Chats', desc: 'Scan incoming messages' },
+                    { key: 'access_contacts', label: 'Access Contacts', desc: 'Search contact records' },
+                    { key: 'manage_contacts', label: 'Manage Contacts', desc: 'Register or update contacts' },
+                    { key: 'access_groups', label: 'Access Groups', desc: 'Browse joined groups' },
+                    { key: 'send_group_messages', label: 'Send Group Messages', desc: 'Post to groups' },
+                    { key: 'read_group_chats', label: 'Read Group Chats', desc: 'Analyze group discussions' },
+                    { key: 'view_message_history', label: 'View Message History', desc: 'Read past conversation logs' },
+                  ].map((s) => (
+                    <SkillItem key={s.key} label={s.label} desc={s.desc} enabled={waPermissions[s.key]} copyText={`${s.label}: ${s.desc}`} />
                   ))}
                 </div>
               </section>

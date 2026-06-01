@@ -175,6 +175,8 @@ interface ProfilePageProps {
   onSetLanguage: (v: string) => void;
   selectedVoice: string;
   setSelectedVoice: (v: string) => void;
+  themePreference: 'system' | 'light' | 'dark';
+  onSetThemePreference: (v: 'system' | 'light' | 'dark') => void;
   saveSettings: (callbacks?: { onSuccess?: () => void; onError?: (msg: string) => void }) => Promise<void>;
   isSaving: boolean;
 }
@@ -210,6 +212,8 @@ export function ProfilePage({
   onSetLanguage,
   selectedVoice,
   setSelectedVoice,
+  themePreference,
+  onSetThemePreference,
   saveSettings,
   isSaving
 }: ProfilePageProps) {
@@ -467,6 +471,28 @@ export function ProfilePage({
                   </span>
                 </div>
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Appearance Section */}
+        <section>
+          <h2 className="text-[13px] uppercase tracking-wide text-zinc-500 font-medium px-4 mb-2">Appearance</h2>
+          <div className="bg-[#1C1C1E] rounded-[20px] overflow-hidden divide-y divide-white/5">
+            <div className="p-4 flex items-center justify-between">
+              <label htmlFor="theme-select" className="text-[15px] text-white">Theme</label>
+              <select
+                id="theme-select"
+                value={themePreference}
+                onChange={(e) => onSetThemePreference(e.target.value as 'system' | 'light' | 'dark')}
+                className="bg-transparent text-[15px] text-zinc-400 outline-none text-right cursor-pointer"
+                aria-label="Select Theme"
+                title="Select Theme"
+              >
+                <option value="system" className="bg-[#1C1C1E] text-white">System (Default)</option>
+                <option value="light" className="bg-[#1C1C1E] text-white">Light</option>
+                <option value="dark" className="bg-[#1C1C1E] text-white">Dark</option>
+              </select>
             </div>
           </div>
         </section>
