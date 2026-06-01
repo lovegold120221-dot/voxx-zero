@@ -68,8 +68,7 @@ const AUTO_STOP_SILENCE_MS = 90_000; // 90 seconds auto-stop
 const MAX_CONSECUTIVE_SILENCE_FILLERS = 3;
 const DEFAULT_AMBIENT_VOLUME = 12;
 
-const START_CHIME_URL = '/start-stop.mp3';
-const STOP_CHIME_URL = '/start-stop.mp3';
+const CHIME_URL = '/start-stop.mp3';
 
 const DOCUMENT_TEMPLATE_FILES = [
   { key: 'contract', filename: 'contract-sample.html', description: 'Executive employment agreement with editor and preview layout, A4 paper, signature canvas, dynamic data binding, and print styles.' },
@@ -3602,7 +3601,7 @@ ${historyContext}
       setIsActive(true);
       setConnecting(false);
       sessionStartingRef.current = false;
-      playChime(START_CHIME_URL);
+      playChime(CHIME_URL);
 
       setTimeout(() => {
         sendTextToLive(
@@ -3619,7 +3618,7 @@ ${historyContext}
 
   const stopSession = () => {
     if (isActiveRef.current) {
-      playChime(STOP_CHIME_URL);
+      playChime(CHIME_URL);
     }
     clearSilenceFillerTimer();
     isActiveRef.current = false;
