@@ -1187,6 +1187,27 @@ export function BeatriceAgent({
     }
   };
 
+  const formatGenericResult = (result: any) => {
+    if (!result) return '<p>Action completed successfully.</p>';
+    if (typeof result !== 'object') return `<p>${result}</p>`;
+    
+    const rows = Object.entries(result as Record<string, any>)
+      .filter(([key]) => !key.startsWith('_'))
+      .map(([key, val]) => {
+        let displayVal = val;
+        if (typeof val === 'object') {
+          displayVal = Array.isArray(val) ? val.join(', ') : Object.values(val).join(', ');
+        }
+        return `
+        <div style="margin-bottom:12px;">
+          <div style="font-size:11px; color:#d0a78b; text-transform:uppercase; font-weight:bold; letter-spacing:0.5px;">${key.replace(/_/g, ' ')}</div>
+          <div style="font-size:14px; color:#fff; margin-top:2px;">${displayVal}</div>
+        </div>`;
+      }).join('');
+    
+    return `<div style="padding:16px;">${rows}</div>`;
+  };
+
   const showToolResult = (toolName: string, result: any, error?: string) => {
     const title = toolName.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
     const isError = !!error || (result && result.error);
@@ -1238,11 +1259,11 @@ export function BeatriceAgent({
       formattedContent = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>YouTube Results</title><style>body{margin:0;font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#0d0a08;color:#f0e6df;padding:20px}h2{margin:0 0 4px;font-size:18px;color:#d0a78b}.count{font-size:12px;color:#6b5d53;margin-bottom:16px}</style></head><body><h2>▶ YouTube Results</h2><p class="count">${result.items.length} result${result.items.length !== 1 ? 's' : ''}</p>${vids}</body></html>`;
       fileType = 'html';
     } else if (toolName === 'create_google_task' && result) {
-      formattedContent = `✅ Task created: ${result.title || 'Untitled'}`;
-      fileType = 'txt';
+      formattedContent = `<div style="padding:20px; color:#fff;"><h3>✅ Task Created</h3><p>${result.title || 'Untitled'}</p></div>`;
+      fileType = 'html';
     } else if (toolName === 'send_gmail_message' && result) {
-      formattedContent = `✅ Email sent successfully${result.id ? ' (ID: ' + result.id + ')' : ''}`;
-      fileType = 'txt';
+      formattedContent = `<div style="padding:20px; color:#fff;"><h3>✅ Email Sent</h3><p>Your email has been sent successfully.</p></div>`;
+      fileType = 'html';
     } else if (toolName.startsWith('belgian_') && result) {
       fileType = 'html';
       const headingColor = '#d0a78b';
@@ -1287,103 +1308,62 @@ export function BeatriceAgent({
               <div class="field"><div class="label">Enterprise Number</div><div class="value highlight">${c.bce}</div></div>
               <div class="field"><div class="label">Legal Form</div><div class="value">${c.legalForm}</div></div>
               <div class="field"><div class="label">CEO / Administrator</div><div class="value">${c.ceo}</div></div>
-              <div class="field"><div class="label">Registered Office</div><div class="value">${c.address}</div></div>
-              <div class="field"><div class="label">Date of Establishment</div><div class="value">${c.established}</div></div>
-            </div>
-            <div class="field" style="margin-top:16px; border-top:1px solid rgba(255,255,255,0.05); padding-top:16px;">
-              <div class="label">NACE Classification</div>
-              <div class="value" style="color:#ddd; font-style:italic;">${c.nace}</div>
+              <div class="field"><div class="label">Address</div><div class="value">${c.address}</div></div>
+              <div class="field"><div class="label">Established</div><div class="value">${c.established}</div></div>
+              <div class="field"><div class="label">NACE Code</div><div class="value">${c.nace}</div></div>
             </div>
           </div>
         ${footHtml}`;
       } else if (toolName === 'belgian_vies_vat_validate') {
-        const statusText = result.isValid ? 'VALID / ACTIVE' : 'INVALID / INACTIVE';
-        const badgeClass = result.isValid ? 'background:rgba(76,175,80,0.15); border-color:#4CAF50; color:#4CAF50;' : 'background:rgba(244,67,54,0.15); border-color:#F44336; color:#F44336;';
         formattedContent = `${headHtml}
           <div class="card">
-            <div class="flex" style="border-bottom:1px solid ${borderColor}; padding-bottom:16px; margin-bottom:16px;">
-              <div>
-                <h2 style="margin:0;">🇪🇺 VIES VAT Verification</h2>
-                <p style="margin:4px 0 0; font-size:12px; color:#988c84;">European Commission Registry</p>
-              </div>
-              <span class="badge" style="${badgeClass}">${statusText}</span>
-            </div>
+            <h2 style="margin-bottom:4px;">🇪🇺 VAT Number Validation</h2>
+            <p style="margin:0 0 16px 0; font-size:13px; color:#988c84;">VIES Network Status Report</p>
             <div class="grid">
-              <div class="field"><div class="label">Country</div><div class="value">${result.countryCode}</div></div>
+              <div class="field"><div class="label">Entity Name</div><div class="value" style="font-size:16px; font-weight:600; color:#d0a78b;">${result.name || 'N/A'}</div></div>
               <div class="field"><div class="label">VAT Number</div><div class="value highlight">${result.countryCode}${result.vatNumber}</div></div>
-              ${result.name ? `<div class="field"><div class="label">Registered Name</div><div class="value">${result.name}</div></div>` : ''}
-              ${result.address ? `<div class="field"><div class="label">Registered Address</div><div class="value">${result.address}</div></div>` : ''}
+              <div class="field"><div class="label">Status</div><div class="value ${result.isValid ? 'highlight' : ''}">${result.isValid ? '✅ Valid / Active' : '❌ Invalid / Inactive'}</div></div>
+              <div class="field"><div class="label">Address</div><div class="value">${result.address || 'N/A'}</div></div>
             </div>
-            ${result.error ? `<div style="margin-top:20px; font-size:11px; color:#ff9800; border-top:1px solid rgba(255,255,255,0.05); padding-top:12px;">ℹ️ ${result.error}</div>` : ''}
+            ${result.error ? `<p style="margin-top:16px; font-size:12px; color:#e57373;">⚠️ ${result.error}</p>` : ''}
           </div>
         ${footHtml}`;
-      } else if (toolName === 'belgian_peppol_invoice' && result.previewHtml) {
+      } else if (toolName === 'belgian_peppol_invoice') {
         formattedContent = result.previewHtml;
-      } else if (toolName === 'belgian_tax_calendar' && result.deadlines) {
+      } else if (toolName === 'belgian_tax_calendar') {
         const rows = result.deadlines.map((d: any) => `
           <tr>
-            <td style="color:#eee; font-weight:500;">${d.name}</td>
+            <td><strong>${d.name}</strong><br><span style="font-size:10px; color:#888;">${d.category}</span></td>
             <td class="highlight">${d.date}</td>
-            <td style="color:#aaa;">${d.category}</td>
-            <td style="font-size:12px; color:#ffc107;">${d.penaltyInfo}</td>
+            <td style="font-size:11px; color:#ddd;">${d.description}</td>
+            <td style="font-size:11px; color:#e57373;">${d.penaltyInfo}</td>
           </tr>
         `).join('');
         formattedContent = `${headHtml}
           <div class="card">
-            <h2 style="margin-bottom:8px;">📅 Belgian Corporate Tax Calendar</h2>
-            <p style="margin:0 0 20px 0; font-size:13px; color:#988c84;">Proactive deadline monitoring for compliance and penalty avoidance.</p>
+            <h2 style="margin-bottom:4px;">📅 Tax & Compliance Calendar</h2>
+            <p style="margin:0 0 16px 0; font-size:13px; color:#988c84;">Upcoming Belgian administrative deadlines.</p>
             <table>
               <thead>
-                <tr>
-                  <th>Deadline / Tax Type</th>
-                  <th>Due Date</th>
-                  <th>Category</th>
-                  <th>Penalty & Late Fees</th>
-                </tr>
+                <tr><th>Deadline</th><th>Date</th><th>Description</th><th>Risk</th></tr>
               </thead>
-              <tbody>
-                ${rows || '<tr><td colspan="4" style="text-align:center; color:#6b5d53;">No matching tax deadlines found for the period.</td></tr>'}
-              </tbody>
+              <tbody>${rows}</tbody>
             </table>
           </div>
         ${footHtml}`;
       } else if (toolName === 'belgian_registration_tax_calc') {
-        const c = result;
         formattedContent = `${headHtml}
           <div class="card">
-            <div class="flex" style="border-bottom:1px solid ${borderColor}; padding-bottom:16px; margin-bottom:16px;">
-              <div>
-                <h2 style="margin:0;">🏡 Real Estate Registration Rights</h2>
-                <p style="margin:4px 0 0; font-size:12px; color:#988c84;">Regional Property Tax Calculation</p>
-              </div>
-              <span class="badge">${c.region} Region</span>
+            <h2 style="margin-bottom:4px;">🏠 Registration Tax Calculator</h2>
+            <p style="margin:0 0 16px 0; font-size:13px; color:#988c84;">Flanders/Wallonia/Brussels Property Tax Estimation</p>
+            <div class="grid">
+              <div class="field"><div class="label">Region</div><div class="value highlight">${result.region}</div></div>
+              <div class="field"><div class="label">Purchase Price</div><div class="value">€${result.purchasePrice.toLocaleString()}</div></div>
+              <div class="field"><div class="label">Tax Rate Applied</div><div class="value highlight">${result.appliedRate}%</div></div>
+              <div class="field"><div class="label">Total Tax Due</div><div class="value" style="font-size:18px; font-weight:bold; color:#d0a78b;">€${result.totalTaxDue.toLocaleString()}</div></div>
             </div>
-            
-            <div class="grid" style="margin-bottom:20px;">
-              <div class="field"><div class="label">Property Value</div><div class="value" style="font-size:18px; font-weight:bold;">€${c.purchasePrice.toLocaleString()}</div></div>
-              <div class="field"><div class="label">Tax Rate Applied</div><div class="value highlight" style="font-size:18px;">${c.appliedRate}% <span style="font-size:12px; color:#888; text-decoration:line-through; font-weight:normal;">(${c.standardRate}%)</span></div></div>
-            </div>
-
-            <table style="margin-bottom:20px;">
-              <tbody>
-                <tr>
-                  <td style="color:#aaa;">Standard Rate Rights</td>
-                  <td style="text-align:right;">€${(c.purchasePrice * (c.standardRate / 100)).toLocaleString()}</td>
-                </tr>
-                <tr style="border-bottom:2px solid ${borderColor};">
-                  <td style="color:#aaa;">Exemption Abattement (${c.region})</td>
-                  <td style="text-align:right; color:#4CAF50;">- €${c.savings.toLocaleString()}</td>
-                </tr>
-                <tr style="font-weight:bold; font-size:16px; background:rgba(208, 167, 139, 0.08);">
-                  <td style="color:#d0a78b;">Total Net Registration Tax</td>
-                  <td style="text-align:right; color:#d0a78b;">€${c.totalTaxDue.toLocaleString()}</td>
-                </tr>
-              </tbody>
-            </table>
-
-            <div style="font-size:13px; color:#eee; line-height:1.6; border-top:1px solid rgba(255,255,255,0.05); padding-top:16px;">
-              <strong>Calculation Explainer:</strong><br/>
-              ${c.breakdown}
+            <div style="font-size:13px; color:#eee; line-height:1.6; border-top:1px solid ${borderColor}; padding-top:16px; margin-top:16px;">
+              <strong>Calculation Explainer:</strong><br/>${result.breakdown}
             </div>
           </div>
         ${footHtml}`;
@@ -1394,18 +1374,15 @@ export function BeatriceAgent({
           <div class="card">
             <h2 style="margin-bottom:4px;">🔑 Itsme e-Government Portal Guide</h2>
             <p style="margin:0 0 16px 0; font-size:13px; color:#988c84;">Your roadmap to official Belgian administrative services.</p>
-            
             <div class="field" style="margin-bottom:20px;">
               <div class="label">Target Portal</div>
               <div class="value" style="font-size:16px; font-weight:600; color:#d0a78b;">${result.portalName}</div>
               <a href="${result.url}" target="_blank" style="display:inline-block; margin-top:4px; font-size:12px; color:#d0a78b; text-decoration:underline;">Visit Official URL: ${result.url}</a>
             </div>
-
             <div style="margin-bottom:20px;">
               <div class="label" style="margin-bottom:8px;">Documents to Have Ready</div>
               <div>${docs}</div>
             </div>
-
             <div>
               <div class="label" style="margin-bottom:8px;">Step-by-Step Navigation Instructions</div>
               <ol class="step-list">${steps}</ol>
@@ -1423,16 +1400,11 @@ export function BeatriceAgent({
               </div>
               <span class="badge">Parsed ${result.detectedLanguage}</span>
             </div>
-
             <div class="field" style="margin-bottom:20px;">
               <div class="label">Text Parsed</div>
               <div class="value" style="font-style:italic; font-size:12px; background:rgba(0,0,0,0.2); padding:10px; border-radius:6px; color:#ccc;">"${result.translation}"</div>
             </div>
-
-            <div style="font-size:13px; line-height:1.6; color:#eee; margin-bottom:20px;">
-              ${result.culturalExplanation}
-            </div>
-
+            <div style="font-size:13px; line-height:1.6; color:#eee; margin-bottom:20px;">${result.culturalExplanation}</div>
             <div>
               <div class="label" style="margin-bottom:8px; color:#e57373;">⚠️ Legal Action Items for the Citizen</div>
               <ul style="margin:0; padding:0 0 0 20px; color:#eee; font-size:13px; line-height:1.5;">${actions}</ul>
@@ -1446,12 +1418,10 @@ export function BeatriceAgent({
           <div class="card">
             <h2 style="margin-bottom:4px;">🏥 Mutualité / Ziekenfonds Cost Reimbursement</h2>
             <p style="margin:0 0 16px 0; font-size:13px; color:#988c84;">Navigate healthcare refunds and allowances in Belgium.</p>
-            
             <div class="field" style="margin-bottom:20px; background:rgba(208,167,139,0.06); padding:12px; border-radius:8px; border-left:4px solid #d0a78b;">
               <div class="label" style="color:#d0a78b;">Refund Eligibility & Rules</div>
               <div class="value" style="font-size:13px; line-height:1.5; color:#eee; margin-top:4px;">${result.reimbursementRules}</div>
             </div>
-
             <div class="grid" style="gap:24px;">
               <div>
                 <div class="label" style="margin-bottom:8px;">Required Claims Documents</div>
@@ -1470,19 +1440,16 @@ export function BeatriceAgent({
           <div class="card">
             <h2 style="margin-bottom:4px;">⚖️ Belgian Labor Law Simplifier</h2>
             <p style="margin:0 0 20px 0; font-size:13px; color:#988c84;">Plain-language translation of complex employment codes.</p>
-            
             <div style="background:rgba(208,167,139,0.06); padding:16px; border-radius:8px; border:1px dashed ${borderColor}; margin-bottom:20px;">
               <div class="label" style="color:#d0a78b; margin-bottom:6px;">Clause Analysis</div>
               <div style="font-size:13px; line-height:1.5; color:#fff;">${result.clauseExposition}</div>
             </div>
-
             <div class="field" style="margin-bottom:20px;">
-              <div class="label">Legal Statutory Context</div>
-              <div class="value" style="color:#ddd; font-size:13px; line-height:1.5;">${result.legalContext}</div>
+              <div class="label">Legal Context</div>
+              <div class="value" style="font-size:13px; line-height:1.5; color:#eee;">${result.legalContext}</div>
             </div>
-
             <div>
-              <div class="label" style="margin-bottom:8px; color:#4db6ac;">💡 Recommended Actions & Employee Safeguards</div>
+              <div class="label" style="margin-bottom:8px;">Recommendations</div>
               <ul style="margin:0; padding:0 0 0 20px; color:#eee; font-size:13px; line-height:1.5;">${recs}</ul>
             </div>
           </div>
@@ -1490,21 +1457,18 @@ export function BeatriceAgent({
       } else if (toolName === 'belgian_mobility_planner') {
         const rows = result.connections.map((c: any) => `
           <tr>
-            <td style="font-size:16px; font-weight:bold; color:#fff;">🕒 ${c.departureTime}</td>
-            <td style="font-size:16px; color:#eee;">➡️ ${c.arrivalTime}</td>
-            <td style="color:#aaa;">⏱️ ${c.duration}</td>
-            <td class="highlight" style="font-size:12px;">Platform ${c.platform}</td>
-            <td style="color:#eee; font-family:monospace; font-size:12px;">${c.trainNumber}</td>
+            <td>${c.departureTime}<br><span style="font-size:10px; color:#888;">${c.trainNumber}</span></td>
+            <td>${c.arrivalTime}</td>
+            <td>${c.duration}</td>
+            <td>${c.platform}</td>
             <td style="text-align:right; font-weight:bold; color:${c.delay === 'On time' ? '#4CAF50' : '#FF9800'};">${c.delay}</td>
           </tr>
         `).join('');
-        
         const disruptions = result.disruptions.map((d: string) => `
           <div style="background:rgba(255,152,0,0.1); border-left:4px solid #FF9800; color:#fff; padding:12px 16px; border-radius:6px; font-size:13px; line-height:1.4; margin-bottom:16px;">
             ⚠️ <strong>Transit Notice:</strong> ${d}
           </div>
         `).join('');
-
         formattedContent = `${headHtml}
           <div class="card">
             <div class="flex" style="border-bottom:1px solid ${borderColor}; padding-bottom:16px; margin-bottom:16px;">
@@ -1514,38 +1478,23 @@ export function BeatriceAgent({
               </div>
               <span class="badge" style="background:#0d47a1; border-color:#1565c0; color:#bbdefb;">${result.mode}</span>
             </div>
-
             <div class="flex" style="margin-bottom:20px; font-size:15px; font-weight:bold; background:rgba(255,255,255,0.03); padding:10px 16px; border-radius:6px;">
-              <span style="color:#988c84;">Departure Station: <strong style="color:#fff;">${result.from}</strong></span>
-              <span style="color:#988c84;">Arrival Destination: <strong style="color:#fff;">${result.to}</strong></span>
+              <span style="color:#988c84;">Departure: <strong style="color:#fff;">${result.from}</strong></span>
+              <span style="color:#988c84;">Arrival: <strong style="color:#fff;">${result.to}</strong></span>
             </div>
-
             ${disruptions}
-
             <table>
               <thead>
-                <tr>
-                  <th>Departure</th>
-                  <th>Arrival</th>
-                  <th>Duration</th>
-                  <th>Platform</th>
-                  <th>Train ID</th>
-                  <th style="text-align:right;">Status</th>
-                </tr>
+                <tr><th>Departure</th><th>Arrival</th><th>Duration</th><th>Platform</th><th style="text-align:right;">Status</th></tr>
               </thead>
-              <tbody>
-                ${rows || '<tr><td colspan="6" style="text-align:center; color:#6b5d53;">No active connection schedules found between these stations.</td></tr>'}
-              </tbody>
+              <tbody>${rows || '<tr><td colspan="5" style="text-align:center; color:#6b5d53;">No active connection schedules found.</td></tr>'}</tbody>
             </table>
           </div>
         ${footHtml}`;
-      } else {
-        formattedContent = JSON.stringify(result, null, 2);
-        fileType = 'json';
       }
     } else {
-      formattedContent = JSON.stringify(result, null, 2);
-      fileType = 'json';
+      formattedContent = formatGenericResult(result);
+      fileType = 'html';
     }
 
     setActiveDocument({
