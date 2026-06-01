@@ -5,7 +5,7 @@ import { supabase, handleDbError } from '../lib/supabase';
 import { GoogleGenAI, LiveServerMessage, Modality, Type, FunctionDeclaration } from '@google/genai';
 import { AmbientConversationBed, AudioRecorder, AudioStreamer } from '../lib/audio';
 import { listKnowledgeFiles, fetchKnowledgeFileContent } from '../lib/supabaseStorage';
-import { Loader2, Mic, Circle, Check, Settings, X, Save, Video, MessageSquare } from 'lucide-react';
+import { Loader2, Mic, Square, Check, Settings, X, Save, Video, MessageSquare } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { UnifiedTranscript } from './UnifiedTranscript';
 import { saveOutput, uploadToDrive } from '../lib/workspace';
@@ -3815,12 +3815,14 @@ ${historyContext}
                 <Loader2 className="w-6 h-6 sm:w-8 sm:h-8 animate-spin text-white" />
               ) : isActive ? (
                 <div className="relative flex items-center justify-center">
-                   <motion.div
-                    animate={{ scale: [1, 1.15, 1] }}
-                    transition={{ repeat: Infinity, duration: 1.5 }}
-                  >
-                    <Mic className="w-7 h-7 sm:w-9 sm:h-9 text-white drop-shadow-lg" strokeWidth={1.5} />
-                  </motion.div>
+                  <motion.div
+                  animate={{ scale: [1, 1.1, 1] }}
+                  transition={{ repeat: Infinity, duration: 2 }}
+                  className="z-10"
+                >
+                  <Square className="w-6 h-6 sm:w-8 sm:h-8 fill-red-500 text-red-500 rounded-sm" strokeWidth={1} />
+                </motion.div>
+
                 </div>
               ) : (
                 <Mic className="w-7 h-7 sm:w-9 sm:h-9 text-white/90 drop-shadow-md" strokeWidth={1.5} />
