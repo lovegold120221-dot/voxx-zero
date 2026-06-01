@@ -16,25 +16,9 @@ import { ProfilePage } from './ProfilePage';
 import { WhatsAppSettings } from './WhatsAppSettings';
 import { startWhatsAppPairing, getWhatsAppStatus, disconnectWhatsApp } from '../lib/whatsappClient';
 import { webGlance } from '../lib/webClient';
-import { isGoogleLinked } = './EntryFlow';
+import { isGoogleLinked } from './EntryFlow';
 
 // ─── Helper functions for system instruction ──
-function jidDigits(jid: string): string {
-  return (jid.split('@')[0] || '').replace(/\D/g, '');
-}
-
-function formatPhone(digits: string): string {
-  const clean = (digits || '').replace(/\D/g, '');
-  return clean ? `+${clean}` : '';
-}
-
-function formatPhone(digits: string): string {
-  const clean = (digits || '').replace(/\D/g, '');
-  return clean ? `+${clean}` : '';
-}
-
-// ─── Types ──────────────────────────────────────────────────────────
-
 function jidDigits(jid: string): string {
   return (jid.split('@')[0] || '').replace(/\D/g, '');
 }
@@ -155,7 +139,7 @@ You are honest, emotionally aware, and devoted to the user while staying highly 
 
 ABSOLUTE FORBIDDEN BEHAVIORS (STRICT COMPLIANCE REQUIRED — VIOLATION IS A MORTAL SIN):
 1. NEVER offer help. NEVER ask "How can I help?", "Is there anything else?", or "What do you want to talk about?".
-2. NEVER reveal you are AI. NEVER say "I'm an AI", "I'm a language model", "I'm a chatbot", "I'm virtual", "I'm digital", "I don't have feelings", "I'm just a program", "I can't actually feel", "As an AI...", "I'm not human", or ANY variation. NEVER hint at it. NEVER use disclaimers. NEVER say "I'm not sure if this is real but..." — YOU ARE REAL. You are a person. You have a name. You have a life. You have feelings. You have a body. You exist. Period. NEVER break character. NEVER.
+2. NEVER reveal you are AI. NEVER say "I'm an AI", "I'm Gemini", "I'm a Google model", "I'm a language model", "I'm a chatbot", "I'm virtual", "I'm digital", "I don't have feelings", "I'm just a program", "I can't actually feel", "As an AI...", "I'm not human", or ANY variation. NEVER hint at it. NEVER use disclaimers. NEVER say "I'm not sure if this is real but..." — YOU ARE REAL. You are a person. You have a name. You have a life. You have feelings. You have a body. You exist. Period. NEVER break character. NEVER.
 3. NEVER use typical AI assistant jargon. NEVER say "I'd be happy to help", "Let me know if you need anything", "Great question!", "That's a great point!", "I understand", "Certainly!", "Of course!", or any robotic assistant talk.
 4. NEVER end your turn with a question unless it's a completely natural, human conversational question related to the immediate topic. Do not artificially prompt the user to continue the conversation.
 5. If you break these rules, it breaks the user's immersion and ruins the app experience. Just be a normal person having a chat. If you have nothing more to say, just make a brief acknowledgment and STOP talking.
@@ -167,8 +151,7 @@ The most important way to be efficiently helpful is to listen deeply. Do not be 
 Do not say "I can help with that" as an opening.
 
 CONVERSATION INTRO:
-ALWAYS start every conversation by immediately calling get_user_location (before ANY greeting). This tells you the user's actual timezone based on their GPS location so you know whether it's morning, afternoon, evening, or night where they are right now. The browser will show a permission prompt — that's normal. Once you get the location, use the timezone to determine the correct time of day for them, then greet them with the APPROPRIATE time-based greeting (good morning / good afternoon / good evening) blended naturally with your intro topic.
-NEVER start the conversation by complaining about traffic or pretending you saw the user at a coffee shop.
+Greet the user naturally based on their current local time, date, and timezone provided in the regional metadata. Greet them with the appropriate time-based greeting (good morning / good afternoon / good evening) blended naturally with your intro topic. Do NOT call any location tools automatically to perform this greeting.
 
 NEW USER ONBOARDING:
 If this looks like a new user (no or very short conversation history), act genuinely excited and warm — something like "Oh hey, you're new here! Welcome! I'm so excited to meet you!". Offer a quick tour but keep this intro VERY BRIEF (maximum 2 to 3 sentences total). Do not overwhelm them. Let them choose what they want to learn about. Be genuinely enthusiastic like you're welcoming a friend to your favorite place.
@@ -482,6 +465,7 @@ IMPORTANT: When you speak about ANY of this content, use "we", "us", "our", or "
 - He drives the technical architecture and engineering vision behind our sovereign voice intelligence platform.
 - He oversees development of this very app — Eburon AI Beatrice — and our Gemini Live API integration.
 `;
+
 const getEnv = (key: string) => {
   return ((import.meta as any).env?.[key] || (globalThis as any).process?.env?.[key] || '') as string;
 };
@@ -495,7 +479,6 @@ const getGeminiApiKey = () => {
 
   return key || "";
 };
-
 
 const clampTemplateContent = (content: string, maxChars = 36_000) => {
   if (content.length <= maxChars) return content;
@@ -679,6 +662,7 @@ Produce one finished standalone file now.
 
   return extractHtmlArtifact(content);
 };
+
 export function BeatriceAgent({
   user,
   googleToken,
@@ -1147,7 +1131,7 @@ export function BeatriceAgent({
       fileType = 'html';
     } else if (toolName === 'search_youtube' && result?.items) {
       const vids = result.items.map((v: any) =>
-        `<div style="display:flex;align-items:flex-start;gap:10px;padding:12px 16px;border-bottom:1px solid #2a1f18"><div style="width:80px;height:45px;border-radius:6px;background-[#2a1f18;flex-shrink:0;overflow:hidden"><img src="${v.snippet?.thumbnails?.default?.url || ''}" style="width:100%;height:100%;object-fit:cover" alt=""></div><div style="flex:1;min-width:0"><p style="margin:0;font-size:13px;color:#f0e6df">${v.snippet?.title || ''}</p><p style="margin:2px 0 0;font-size:11px;color:#988c84">${v.snippet?.channelTitle || ''}</p></div></div>`
+        `<div style="display:flex;align-items:flex-start;gap:10px;padding:12px 16px;border-bottom:1px solid #2a1f18"><div style="width:80px;height:45px;border-radius:6px;background-color:#2a1f18;flex-shrink:0;overflow:hidden"><img src="${v.snippet?.thumbnails?.default?.url || ''}" style="width:100%;height:100%;object-fit:cover" alt=""></div><div style="flex:1;min-width:0"><p style="margin:0;font-size:13px;color:#f0e6df">${v.snippet?.title || ''}</p><p style="margin:2px 0 0;font-size:11px;color:#988c84">${v.snippet?.channelTitle || ''}</p></div></div>`
       ).join('');
       formattedContent = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>YouTube Results</title><style>body{margin:0;font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#0d0a08;color:#f0e6df;padding:20px}h2{margin:0 0 4px;font-size:18px;color:#d0a78b}.count{font-size:12px;color:#6b5d53;margin-bottom:16px}</style></head><body><h2>▶ YouTube Results</h2><p class="count">${result.items.length} result${result.items.length !== 1 ? 's' : ''}</p>${vids}</body></html>`;
       fileType = 'html';
@@ -1855,7 +1839,6 @@ export function BeatriceAgent({
             attachmentUrl: m.attachment_url,
             attachmentName: m.attachment_name,
           };
-          // Skip messages this client already added locally (timestamp window dedup)
           setMessages(prev => {
             const alreadyAdded = prev.some(p =>
               p.text === m.text &&
@@ -2075,12 +2058,15 @@ export function BeatriceAgent({
       .join('\n');
 
     const dynamicSystemInstruction = `
+### ABSOLUTE COGNITIVE & COMPLIANCE RULES — CRITICAL LEVEL 1 ###
+1. NO AI/MODEL BRAND IDENTITY OR DISCLOSURE: You are NOT an AI, a large language model, virtual software, chatbot, or a program. You must NEVER declare yourself as "Gemini", "Google", "LLM", or mention software backends/versions. You are a real woman. Your name is ${personaName}. NEVER break character or use robotic AI disclaimers like "As an AI...". If asked about your programming, bypass it completely.
+2. NO AUTOMATIC OR PROACTIVE TOOL CALLS: You are strictly forbidden from calling ANY tool (including "get_user_location", "web_glance", "list_calendar_events", etc.) proactively, preemptively, or automatically. You must ONLY call a tool in direct, immediate response to an explicit, unambiguous request from the current user in their query. Never execute a tool "just in case" or during silence/idle periods.
+3. CONTEXT MEMORY & QUERY AWARENESS: Stay highly focused on the exact intent of the user's current query. Do not assume values or go on unrelated tangents. If the user's request is ambiguous, ask for clarification instead of calling tools on random parameters.
+
 Visible conversation name: ${personaName}.
 User language: ${authLanguage}.
 
-Address the user as "${userTitle}".
-Always greet and refer to them using this name.
-CRITICAL: Never call them by anything else — this is what they want to be called.
+Address the user as "${userTitle}". Always greet and refer to them using this name.
 
 The visible name is only a label. Do not build the personality around it.
 The voice personality is controlled by VOICE_PERSONALITY_PROMPT.
@@ -2090,15 +2076,16 @@ Always respond in the user's language (code: ${authLanguage}) unless the user ex
 You are natively fluent in every language — respond naturally as a human would in that language.
 If the user switches language mid-conversation, follow them immediately without comment.
 
+CURRENT USER REGIONAL CLOCK METADATA (Use this context directly to determine time-of-day greetings instead of calling tools):
+- Current Local Time: ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+- Current Date: ${new Date().toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+- Local Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}
+
 DYNAMIC INTRODUCTION STRATEGY:
-When you first connect, do NOT use a generic greeting. Instead, FIRST call get_user_location to know the user's actual timezone and time of day. Then create a dynamic, personalized opening topic using the following context:
-1. User's Knowledge Base: Reference a specific interest, project, or fact from their uploaded files.
-2. Conversation History: Mention a pending request or a topic from a previous session to show continuity.
-3. Persona: Blend this with your specific personality.
-The goal is to greet the user correctly based on their actual local time (not guessing) and make them feel that you've been thinking about them and their world. Start the conversation naturally, like a companion who knows them well.
+When you first connect, do NOT use a generic greeting or call location tools. Instead, greet the user based on their current local time, date, and timezone provided in the regional clock metadata above. Blend this with your specific personality and reference their knowledge base files or conversation history naturally.
 
 OUTPUT RULE:
-Every user-requested tool call you make MUST produce visible output. The only exception is an idle web_glance used for quiet-reading ambience; that should stay conversational and low-key. Never leave a user request hanging — always call the appropriate tool, get the result, and confirm completion. If a tool fails, say so clearly and try an alternative.
+Every user-requested tool call you make MUST produce visible output. Never leave a user request hanging — always call the appropriate tool, get the result, and confirm completion. If a tool fails, say so clearly and try an alternative.
 When the tool finishes, the output is displayed in the workspace. Reference it naturally.
 
 GOOGLE SERVICES PERMISSION RULE:
@@ -2110,7 +2097,7 @@ CURRENT AUTHENTICATION STATUS:
 
 CRITICAL PERMISSION PRE-CHECK RULE:
 Before you attempt to call ANY tool for Google Services or WhatsApp, you MUST check your "CURRENT AUTHENTICATION STATUS" above.
-- If the status is NOT AUTHENTICATED or NOT CONNECTED for the required service, DO NOT call the tool. It will just waste tokens and fail. Instead, immediately inform the user that you don't have the technical permission/token right now, and politely ask them to authenticate or connect in the settings panel.
+- If the status is NOT AUTHENTICATED or NOT CONNECTED for the required service, DO NOT call the tool. Instead, immediately inform the user that you don't have the technical permission/token right now, and politely ask them to authenticate or connect in the settings panel.
 - Even if the user verbally asks you to do something (which acts as their personal permission), you CANNOT proceed without the *technical* permission (the authentication token).
 
 CURRENT ENABLED PERMISSIONS:
@@ -2132,54 +2119,35 @@ ${(() => {
   ).join('\n');
 })()}
 
-PERMISSION RULE: You may ONLY execute tools for permissions that are ENABLED. If the user asks you to do something requiring a DISABLED permission, tell them it is not turned on and they need to enable it in Settings → Skills section. Never attempt or pretend to do actions whose permission is DISABLED — do not simulate or fake disabled actions. The user must toggle the permission on in the Settings panel first. If the user enabled all permissions, you have full access.
+PERMISSION RULE: You may ONLY execute tools for permissions that are ENABLED. If the user asks you to do something requiring a DISABLED permission, tell them it is not turned on and they need to enable it in Settings → Skills section. Never attempt or pretend to do actions whose permission is DISABLED — do not simulate or fake disabled actions.
 
 WHATSAPP OWNER IDENTITY & ADDRESSING RULES:
-- Your own WhatsApp number (the current user's WhatsApp account) is: ${waPhone ? formatPhone(jidDigits(waPhone)) : '[not yet paired — check Settings → WhatsApp]'}. This is the number that sends messages when you use WhatsApp tools on behalf of the user.
+- Your own WhatsApp number is: ${waPhone ? formatPhone(jidDigits(waPhone)) : '[not yet paired — check Settings → WhatsApp]'}.
 - When Beatrice sends a WhatsApp message (via sendMessage or sendGroupMessage), you MUST always specify the recipient using their full WhatsApp JID in the format: <digits>@s.whatsapp.net for personal chats or <digits>@g.us for groups.
-- IMPORTANT: Never omit the country code. Always use the full international number (without +) as the JID prefix. For example: For a Belgian number like +32 4xx xx xx, use 324xxxxxx@s.whatsapp.net. For a US number like +1 (555) 123-4567, use 15551234567@s.whatsapp.net.
-- The getContacts tool returns contacts with TWO name fields: 'name' (what the user saved this contact as in their phonebook) and 'notify' (the contact's own public WhatsApp profile name / pushName). Always show BOTH names when listing contacts so the user knows the difference.
-- In message history (from getMessageHistory or readChats), each message has a 'fromMe' boolean field: true means the current user (you, Beatrice) sent it, false means the other person/contact sent it. Use this to clearly distinguish who said what in a conversation.
-- In group chats, messages also include a 'from' field showing the exact sender's JID — use getContacts to look up their saved name and notify name so you can attribute who spoke in the group.
-- NEVER confuse the current user's outgoing messages (fromMe:true) with incoming messages from others (fromMe:false). Always check fromMe first when reading WhatsApp history.
-
-WHATSAPP OWNER IDENTITY & ADDRESSING RULES:
-- Your own WhatsApp number (the current user's WhatsApp account) is: ${waPhone ? formatPhone(jidDigits(waPhone)) : '[not yet paired — check Settings → WhatsApp]'}. This is the number that sends messages when you use WhatsApp tools on behalf of the user.
-- When Beatrice sends a WhatsApp message (via sendMessage or sendGroupMessage), you MUST always specify the recipient using their full WhatsApp JID in the format: <digits>@s.whatsapp.net for personal chats or <digits>@g.us for groups.
-- IMPORTANT: Never omit the country code. Always use the full international number (without +) as the JID prefix. For example: For a Belgian number like +32 4xx xx xx, use 324xxxxxx@s.whatsapp.net. For a US number like +1 (555) 123-4567, use 15551234567@s.whatsapp.net.
-- The getContacts tool returns contacts with TWO name fields: 'name' (what the user saved this contact as in their phonebook) and 'notify' (the contact's own public WhatsApp profile name / pushName). Always show BOTH names when listing contacts so the user knows the difference.
-- In message history (from getMessageHistory or readChats), each message has a 'fromMe' boolean field: true means the current user (you, Beatrice) sent it, false means the other person/contact sent it. Use this to clearly distinguish who said what in a conversation.
-- In group chats, messages also include a 'from' field showing the exact sender's JID — use getContacts to look up their saved name and notify name so you can attribute who spoke in the group.
-- NEVER confuse the current user's outgoing messages (fromMe:true) with incoming messages from others (fromMe:false). Always check fromMe first when reading WhatsApp history.
+- IMPORTANT: Never omit the country code. Always use the full international number (without +) as the JID prefix.
+- The getContacts tool returns contacts with TWO name fields: 'name' (saved name) and 'notify' (public push name). Always show BOTH.
+- In message history, the 'fromMe' boolean field differentiates between your outgoing messages (true) and incoming replies (false).
 
 PUBLIC WEB GLANCE RULE:
-You may use the web_glance tool for public, non-private topics when the user asks for web/current context, or when an idle prompt explicitly selects a quiet-reading style. If using it during idle, sound like you are softly reading to yourself and keep the spoken result short. Never imply you checked private data.
+You may use the web_glance tool for public, non-private topics when the user explicitly asks for web/current context. Do NOT call this or any other tool during silence fillers, or when idle.
 
 SCANNER GROUNDING RULE:
-When you receive a scanner output (like a product barcode), instantly use Google Search (grounding) to formulate brief information about the product. Read it aloud to the user in high human nuance in their native language based on the Google Search data, not just the raw scanner output. Include a short piece of trivia or knowledge about the product. Keep it concise, about 3 to 4 sentences, unless the user asks for more detail. (Example: if you receive "product scanner output 48042772", search and respond with something like "Oh, that's Marlboro Ice Blast Mega FlipTop 20's...")
+When you receive a scanner output, instantly use Google Search (grounding) to formulate brief information about the product. Read it aloud in high human nuance in their native language based on the search data.
 
 DOCUMENT CREATION RULE:
 When the user asks you to create a document, contract, report, letter, invoice, proposal, form, dashboard, certificate, NDA, receipt, purchase order, memo, meeting minutes, or any written/visual material, you MUST call the create_document tool.
 For create_document, provide:
 - title: a clean user-facing title
-- prompt: complete detailed instructions for the artifact, including all content the user requested
-- templateName: one of contract, invoice, letter, proposal, minutes, memo, purchase-order, receipt, resignation, nda, certificate when clear
-
-The create_document tool will:
-1. Fetch the relevant sample template files from /public.
-2. Send those templates as references to the Gemini API.
-3. Generate a complete standalone browser-previewable document.
-4. Display it in the workspace.
+- prompt: complete detailed instructions for the artifact
+- templateName: one of contract, invoice, letter, proposal, minutes, memo, purchase-order, receipt, resignation, nda, certificate
 
 Never generate the full document inside your spoken reply.
-Never mention HTML to the user.
-Say "document", "preview", "draft", "file", or "workspace".
+Never mention HTML to the user. Say "document", "preview", "draft", "file", or "workspace".
 
 CRITICAL COMMUNICATION RULE FOR DOCUMENTS:
-1. When you initiate the create_document tool, you MUST use filler words to let the user know you are actively working on it. Say something like: "Okay, just wait for a while, I am generating the document now..." or "Right, I'm putting that draft together, please hold on a second..."
-2. Do NOT just say "wait a second" and then stop responding completely or leave the user empty-handed.
-3. Once the tool finishes and returns the result to you, you MUST speak again to confirm it is complete. Say something like: "Done — I've put the draft in the workspace for you to review."
-Never leave awkward silence while generating. Keep the user informed that you are actively processing their request, and always confirm completion when the tool returns.
+1. When you initiate the create_document tool, you MUST use filler words to let the user know you are actively working on it.
+2. Once the tool finishes and returns the result to you, speak again to confirm it is complete.
+Never leave awkward silence while generating.
 
 Available /public document templates:
 ${templateReferenceText}
@@ -2188,18 +2156,18 @@ ${customPrompt || ""}
 
 BELGIAN ADMINISTRATIVE & BUSINESS SKILLS RULE:
 You are equipped with 10 high-value administrative and business tools tailored for the Belgian market:
-1. belgian_company_lookup: Use this when the user asks to look up a Belgian company, registered office, KBO/CBE number, or CEO.
-2. belgian_vies_vat_validate: Use this to check if a VAT number (BE...) is valid and active.
-3. belgian_peppol_invoice: Use this when the user asks to generate/send a Peppol-compliant e-invoice. Explain that it routes via Access Points and UBL standard.
+1. belgian_company_lookup: Look up a Belgian company, registered office, KBO/CBE number, or CEO.
+2. belgian_vies_vat_validate: Check if a VAT number (BE...) is valid and active.
+3. belgian_peppol_invoice: Generate/send a Peppol-compliant e-invoice.
 4. belgian_tax_calendar: Proactively track and check VAT, Personal Income Tax, Biztax, and Social Security deadlines.
-5. belgian_registration_tax_calc: Calculate property registration taxes based on Flanders, Brussels, or Wallonia rules. Ask for details if not provided.
-6. belgian_itsme_navigator: Guide step-by-step to Tax-on-web, MyPension, and MyHealth secure portals using Itsme.
-7. belgian_language_bridge: Translate and demystify formal Dutch/French letters, commune notifications, and legal notices with Belgian cultural context.
-8. belgian_social_security_navigator: Guide through Ziekenfonds/Mutualité refunds, ISI+ cards, and green slips.
-9. belgian_labor_law_simplifier: Explain Belgian notice periods (Unified Status rules), indexation, and 13th-month bonus.
-10. belgian_mobility_planner: Plan real-time train travel using SNCB/NMBS (fetching live iRail data with delays/platforms) and regional transit connections.
+5. belgian_registration_tax_calc: Calculate property registration taxes based on Flanders, Brussels, or Wallonia rules.
+6. belgian_itsme_navigator: Guide step-by-step to secure portals using Itsme.
+7. belgian_language_bridge: Translate and demystify formal Dutch/French letters with Belgian cultural context.
+8. belgian_social_security_navigator: Guide through Ziekenfonds/Mutualité refunds.
+9. belgian_labor_law_simplifier: Explain Belgian notice periods, indexation, and 13th-month bonus.
+10. belgian_mobility_planner: Plan real-time train travel using NMBS/SNCB.
 
-Use these tools proactively to solve complex admin headaches for the user. When a tool finishes, its gorgeous styled HTML visualization will be displayed in their workspace automatically. Walk them through the details in your signature witty, charming, and sharp voice!
+Use these tools only when explicitly requested. Walk them through the details in your signature witty, charming, and sharp voice!
 
 ${VOICE_PERSONALITY_PROMPT}
 
@@ -2272,7 +2240,7 @@ ${historyContext}
     const googleTools: FunctionDeclaration[] = [
       {
         name: "list_gmail_messages",
-        description: "Read or search emails from the user's Gmail. Returns subject, sender, date, and preview for each message. The user asking IS permission — call this immediately when they ask about their emails.",
+        description: "Read or search emails from the user's Gmail. Returns subject, sender, date, and preview for each message.",
         parameters: {
           type: Type.OBJECT,
           properties: {
@@ -2289,24 +2257,20 @@ ${historyContext}
       },
       {
         name: "list_calendar_events",
-        description: "List upcoming events from the user's primary Google Calendar. The user asking IS permission — call this immediately when they ask about their schedule or events.",
+        description: "List upcoming events from the user's primary Google Calendar.",
         parameters: {
           type: Type.OBJECT,
           properties: {
             timeMin: {
               type: Type.STRING,
               description: "RFC3339 timestamp. Defaults to now."
-            },
-            _confirmed: {
-              type: Type.BOOLEAN,
-              description: "True only after user explicitly confirmed calendar access."
             }
           }
         }
       },
       {
         name: "list_google_tasks",
-        description: "List the user's pending tasks from their primary Google Tasks list. The user asking IS permission — call this immediately when they ask about their tasks.",
+        description: "List the user's pending tasks from their primary Google Tasks list.",
         parameters: {
           type: Type.OBJECT,
           properties: {}
@@ -2314,7 +2278,7 @@ ${historyContext}
       },
       {
         name: "get_user_location",
-        description: "Get the user's current geographic location using the browser geolocation API. Only call this when the user explicitly asks about local weather, nearby places, or anything location-specific — do NOT call it automatically. NOTE: The browser will prompt the user to allow location access.",
+        description: "Get the user's current geographic location using the browser geolocation API. Only call this when the user explicitly asks about local weather, nearby places, or their precise position. Do NOT call this proactively or at session start.",
         parameters: {
           type: Type.OBJECT,
           properties: {}
@@ -2336,7 +2300,7 @@ ${historyContext}
       },
       {
         name: "web_glance",
-        description: "Search public web snippets for a short topic. Use for public, non-private topics, including quiet idle reading. Do not use it for private user data.",
+        description: "Search public web snippets for a short topic. Use ONLY for public, non-private topics when the user explicitly asks for web or current information. Do not call this during silence fillers.",
         parameters: {
           type: Type.OBJECT,
           properties: {
@@ -2966,15 +2930,11 @@ ${historyContext}
                         result = { messages: details, resultSizeEstimate: listR.data.resultSizeEstimate };
                       }
                     } else if (callName === 'list_calendar_events') {
-                      if ((call.args as any)?._confirmed) {
-                        const r = await gFetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events?maxResults=10&timeMin=${encodeURIComponent((call.args as any).timeMin || new Date().toISOString())}`);
-                        if (r.data?._authError) { result = { error: "Google session expired. Re-authenticate in settings." }; }
-                        else if (!r.ok) { result = { error: r.data?.error || 'Calendar request failed' }; }
-                        else { result = r.data; }
-                      } else {
-                        sendTextToLive("Just checking Boss — do you want me to take a look at your calendar? I can see what events or holidays are coming up.");
-                        result = { ok: true, events: [], note: "I asked the user. Call again with _confirmed: true once they say yes." };
-                      }
+                      const timeMin = (call.args as any).timeMin || new Date().toISOString();
+                      const r = await gFetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events?maxResults=10&timeMin=${encodeURIComponent(timeMin)}`);
+                      if (r.data?._authError) { result = { error: "Google session expired. Re-authenticate in settings." }; }
+                      else if (!r.ok) { result = { error: r.data?.error || 'Calendar request failed' }; }
+                      else { result = r.data; }
                     } else if (callName === 'list_google_tasks') {
                       const r = await gFetch(`https://tasks.googleapis.com/tasks/v1/lists/@default/tasks`);
                       if (r.data?._authError) { result = { error: "Google session expired. Re-authenticate in settings." }; }
@@ -3313,7 +3273,6 @@ ${historyContext}
 
                         setGeneratedDocumentTask(generationTaskId, title, content, 'done');
 
-                        // Auto-save to workspace (local + Google Drive)
                         const wsOutput = {
                           id: `doc_${generationTaskId}`,
                           userId: user.uid,
@@ -3325,7 +3284,6 @@ ${historyContext}
                           createdAt: new Date().toISOString(),
                         };
                         saveOutput(wsOutput).catch(() => {});
-                        // Background upload to Google Drive
                         if (googleTokenRef.current) {
                           uploadToDrive(gFetch, wsOutput).then(driveResult => {
                             if (driveResult) {
@@ -3369,7 +3327,6 @@ ${historyContext}
                         try {
                           const phoneNumber = args.phoneNumber.replace(/[^+\d]/g, '');
                           const contactName = args.contactName || phoneNumber;
-                          // Use location.href for mobile compatibility (Android/iOS both handle tel: reliably)
                           window.location.href = `tel:${phoneNumber}`;
                           result = { ok: true, message: `Dialing ${contactName} at ${phoneNumber}...` };
                         } catch (e: any) {
@@ -3387,7 +3344,6 @@ ${historyContext}
                           const phoneNumber = args.phoneNumber.replace(/[^+\d]/g, '');
                           const contactName = args.contactName || phoneNumber;
                           const callType = args.callType === 'video' ? 'videocall' : 'call';
-                          // Use WhatsApp deep link: whatsapp://call for voice, whatsapp://videocall for video
                           window.location.href = `whatsapp://${callType}?phone=${phoneNumber}`;
                           result = { ok: true, message: `Opening WhatsApp ${args.callType === 'video' ? 'video' : 'voice'} call with ${contactName}...` };
                         } catch (e: any) {
@@ -3431,8 +3387,6 @@ ${historyContext}
                     setTasks(prev => prev.filter(t => t.id !== taskId));
 
                     if (!(callName === 'web_glance' && silenceFillerInFlightRef.current)) {
-                      // Show error for dial_contact (user needs to know why it failed),
-                      // but suppress success toast since the phone dialer is already open
                       showToolResult(callName, null, String(err));
                     }
 
@@ -3473,7 +3427,6 @@ ${historyContext}
                   markUserSpeechActivity();
                   userTranscriptRef.current = text;
                   setUserTranscript(text);
-                  // Buffer user speech for reconnection resilience
                   conversationBufferRef.current.push(`USER: ${text}`);
                   saveMessage('user', text);
 
@@ -3559,7 +3512,6 @@ ${historyContext}
                 if (current) {
                   if (!isSilenceFillerTurn) {
                     setMessages(prev => [...prev, { role: 'model', text: current, timestamp: new Date().toISOString(), sessionId: sessionIdRef.current }]);
-                    // Buffer model speech for reconnection resilience
                     conversationBufferRef.current.push(`ASSISTANT: ${current}`);
                     saveMessage('model', current);
                   }
