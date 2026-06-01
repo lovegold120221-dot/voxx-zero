@@ -1763,7 +1763,7 @@ export function BeatriceAgent({
         const recorderVols = audioRecorderRef.current.getFrequencies(11);
 
         setVolumes(prev => prev.map((v, i) => {
-          let target = Math.max(streamerVols[i] || 0, recorderVols[i] || 0);
+          let target = recorderVols[i] || 0; // Only use user microphone capture, do not animate from Beatrice speaker
           target = Math.min(1, target * 1.8);
           return v + (target - v) * 0.5;
         }));
