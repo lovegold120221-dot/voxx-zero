@@ -152,7 +152,7 @@ export function AuthPage({ onGoogleToken, onLogin }: AuthPageProps) {
       <div className="w-full max-w-[400px] z-10 flex flex-col items-center">
         {/* Minimal header */}
         <div className="flex items-center gap-3 mb-10">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#d0a78b]/20 to-amber-900/30 p-[1px]">
+          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#d0a78b]/20 to-amber-900/30 p-[1px]">
             <div className="w-full h-full rounded-full bg-[#080808] flex items-center justify-center border border-[#d0a78b]/10 overflow-hidden p-1.5">
               <img src="https://eburon.ai/icon-eburon.svg" alt="" className="w-full h-full object-contain" />
             </div>
