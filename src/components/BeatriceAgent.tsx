@@ -4182,8 +4182,8 @@ ${historyContext}
 
               {/* Skills Dashboard */}
               <section className="space-y-3">
-                <h2 className="text-[11px] font-['SF_Pro_Text',system-ui,sans-serif] font-bold tracking-[0.2em] uppercase text-white/40 mb-3 px-1">Skills & Capabilities</h2>
-                <div className="bg-white/[0.02] backdrop-blur-md border border-white/[0.04] rounded-3xl shadow-[0_8px_32px_rgba(0,0,0,0.4)] overflow-hidden transition-all duration-300 hover:border-white/[0.07] hover:bg-white/[0.03]">
+                <h2 className="text-[10px] font-semibold tracking-[0.15em] uppercase text-white/40 mb-3 px-1">Skills & Capabilities</h2>
+                <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl overflow-hidden">
                   {/* Google Services */}
                   <div className="p-4 border-b border-white/[0.03]">
                     <span className="text-[10px] font-bold tracking-[0.15em] uppercase text-zinc-500">Google Services</span>
