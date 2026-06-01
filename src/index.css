@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+@theme {
+  darkMode: 'selector';
+}
+
 html, body {
   touch-action: pan-y;
   -webkit-overflow-scrolling: touch;

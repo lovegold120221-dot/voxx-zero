@@ -801,6 +801,20 @@ export function BeatriceAgent({
     }
   }, [firstName]);
 
+  useEffect(() => {
+    const root = window.document.documentElement;
+    const isDark =
+      themePreference === 'dark' ||
+      (themePreference === 'system' &&
+        window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+    if (isDark) {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+  }, [themePreference]);
+
   const [isSaving, setIsSaving] = useState(false);
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [showProfilePage, setShowProfilePage] = useState(false);
@@ -3748,10 +3762,10 @@ ${historyContext}
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white flex flex-col h-[100dvh] overflow-y-auto select-none relative">
+    <div className="min-h-screen bg-white dark:bg-[#050505] text-black dark:text-white flex flex-col h-[100dvh] overflow-y-auto select-none relative">
       <audio ref={bgAudioRef} src="/office.mp3" loop crossOrigin="anonymous" className="hidden" />
       <div
-        className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(208,167,139,0.03),transparent_75%)] pointer-events-none z-0"
+        className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(208,167,139,0.03),transparent_75%)] pointer-events-none z-0 dark:block hidden"
       />
 
       <header className="sticky top-0 w-full bg-black/70 backdrop-blur-2xl border-b border-white/[0.04] px-4 sm:px-6 py-3.5 flex items-center justify-between z-30 shrink-0">
