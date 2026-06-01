@@ -5,7 +5,7 @@ import { supabase, handleDbError } from '../lib/supabase';
 import { GoogleGenAI, LiveServerMessage, Modality, Type, FunctionDeclaration } from '@google/genai';
 import { AmbientConversationBed, AudioRecorder, AudioStreamer } from '../lib/audio';
 import { listKnowledgeFiles, fetchKnowledgeFileContent } from '../lib/supabaseStorage';
-import { Loader2, Mic, Square, Check, Settings, X, Save, Video, MessageSquare, Clipboard } from 'lucide-react';
+import { Loader2, Mic, Square, Check, Settings, X, Save, Video, MessageSquare, Clipboard, Mail, Calendar, CheckSquare, HardDrive, Youtube, MessageCircle, User as UserIcon, UserPlus, Users, Send, MessageSquareText, Clock } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { UnifiedTranscript } from './UnifiedTranscript';
 import { saveOutput, uploadToDrive } from '../lib/workspace';
@@ -2020,11 +2020,16 @@ export function BeatriceAgent({
     navigator.clipboard.writeText(text);
   };
 
-  const SkillItem = ({ label, desc, enabled, copyText }: { label: string, desc: string, enabled?: boolean, copyText: string }) => (
+  const SkillItem = ({ label, desc, enabled, copyText, icon: Icon }: { label: string, desc: string, enabled?: boolean, copyText: string, icon: any }) => (
     <div className="group px-5 py-3.5 flex items-center justify-between border-b border-white/[0.03] last:border-b-0 hover:bg-white/[0.03] transition-colors">
-      <div className="flex flex-col gap-0.5 pr-4">
-        <span className="text-[13px] text-zinc-100 font-bold tracking-wide">{label}</span>
-        <span className="text-[10px] text-zinc-500 font-medium">{desc}</span>
+      <div className="flex items-center gap-3">
+        <div className="w-8 h-8 rounded-full bg-white/[0.05] flex items-center justify-center shrink-0 text-zinc-400">
+          <Icon className="w-4 h-4" />
+        </div>
+        <div className="flex flex-col gap-0.5 pr-4">
+          <span className="text-[13px] text-zinc-100 font-bold tracking-wide">{label}</span>
+          <span className="text-[10px] text-zinc-500 font-medium">{desc}</span>
+        </div>
       </div>
       <div className="flex items-center gap-2">
         {typeof enabled !== 'undefined' && (
@@ -4144,13 +4149,13 @@ ${historyContext}
                     <span className="text-[10px] font-bold tracking-[0.15em] uppercase text-zinc-500">Google Services</span>
                   </div>
                   {[
-                    { key: 'gmail', label: 'Gmail', desc: 'Read and send emails' },
-                    { key: 'calendar', label: 'Calendar', desc: 'View events and schedules' },
-                    { key: 'tasks', label: 'Tasks', desc: 'Manage to-do lists' },
-                    { key: 'drive', label: 'Drive', desc: 'List and search files' },
-                    { key: 'youtube', label: 'YouTube', desc: 'Search and discover videos' },
+                    { key: 'gmail', label: 'Gmail', desc: 'Read and send emails', icon: Mail },
+                    { key: 'calendar', label: 'Calendar', desc: 'View events and schedules', icon: Calendar },
+                    { key: 'tasks', label: 'Tasks', desc: 'Manage to-do lists', icon: CheckSquare },
+                    { key: 'drive', label: 'Drive', desc: 'List and search files', icon: HardDrive },
+                    { key: 'youtube', label: 'YouTube', desc: 'Search and discover videos', icon: Youtube },
                   ].map((s) => (
-                    <SkillItem key={s.key} label={s.label} desc={s.desc} enabled={!!googleToken} copyText={`${s.label}: ${s.desc}`} />
+                    <SkillItem key={s.key} label={s.label} desc={s.desc} enabled={!!googleToken} copyText={`${s.label}: ${s.desc}`} icon={s.icon} />
                   ))}
 
                   {/* WhatsApp Skills */}
@@ -4158,16 +4163,16 @@ ${historyContext}
                     <span className="text-[10px] font-bold tracking-[0.15em] uppercase text-zinc-500">WhatsApp Skills</span>
                   </div>
                   {[
-                    { key: 'send_messages', label: 'Send Messages', desc: 'Send texts on your behalf' },
-                    { key: 'read_chats', label: 'Read Chats', desc: 'Scan incoming messages' },
-                    { key: 'access_contacts', label: 'Access Contacts', desc: 'Search contact records' },
-                    { key: 'manage_contacts', label: 'Manage Contacts', desc: 'Register or update contacts' },
-                    { key: 'access_groups', label: 'Access Groups', desc: 'Browse joined groups' },
-                    { key: 'send_group_messages', label: 'Send Group Messages', desc: 'Post to groups' },
-                    { key: 'read_group_chats', label: 'Read Group Chats', desc: 'Analyze group discussions' },
-                    { key: 'view_message_history', label: 'View Message History', desc: 'Read past conversation logs' },
+                    { key: 'send_messages', label: 'Send Messages', desc: 'Send texts on your behalf', icon: MessageCircle },
+                    { key: 'read_chats', label: 'Read Chats', desc: 'Scan incoming messages', icon: MessageSquare },
+                    { key: 'access_contacts', label: 'Access Contacts', desc: 'Search contact records', icon: UserIcon },
+                    { key: 'manage_contacts', label: 'Manage Contacts', desc: 'Register or update contacts', icon: UserPlus },
+                    { key: 'access_groups', label: 'Access Groups', desc: 'Browse joined groups', icon: Users },
+                    { key: 'send_group_messages', label: 'Send Group Messages', desc: 'Post to groups', icon: Send },
+                    { key: 'read_group_chats', label: 'Read Group Chats', desc: 'Analyze group discussions', icon: MessageSquareText },
+                    { key: 'view_message_history', label: 'View Message History', desc: 'Read past conversation logs', icon: Clock },
                   ].map((s) => (
-                    <SkillItem key={s.key} label={s.label} desc={s.desc} enabled={waPermissions[s.key]} copyText={`${s.label}: ${s.desc}`} />
+                    <SkillItem key={s.key} label={s.label} desc={s.desc} enabled={waPermissions[s.key]} copyText={`${s.label}: ${s.desc}`} icon={s.icon} />
                   ))}
                 </div>
               </section>
