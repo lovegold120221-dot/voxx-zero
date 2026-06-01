@@ -7,16 +7,14 @@ import { WhatsAppChatList } from './WhatsAppChatList';
 
 interface WhatsAppSettingsProps {
   userId: string;
+  waPermissions: Record<string, boolean>;
+  onTogglePermission: (key: string) => void;
 }
 
-export function WhatsAppSettings({ userId }: WhatsAppSettingsProps) {
+export function WhatsAppSettings({ userId, waPermissions, onTogglePermission }: WhatsAppSettingsProps) {
   const [waStatus, setWaStatus] = useState<string>('not_found');
   const [waQrCode, setWaQrCode] = useState<string | null>(null);
   const [waPhone, setWaPhone] = useState<string | null>(null);
-  const [waPermissions, setWaPermissions] = useState<Record<string, boolean>>({
-    send_messages: false, read_chats: false, access_contacts: false, manage_contacts: false,
-    access_groups: false, send_group_messages: false, read_group_chats: false, view_message_history: false
-  });
   const [waPairing, setWaPairing] = useState(false);
   const [pairingMethod, setPairingMethod] = useState<'qr' | 'phone'>('qr');
   const [phoneInput, setPhoneInput] = useState<string>('');

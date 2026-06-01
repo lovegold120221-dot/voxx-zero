@@ -606,6 +606,25 @@ export class WhatsAppManager {
     return { chatId: `${recipient}@cloud.whatsapp`, messageId: data?.messages?.[0]?.id };
   }
 
+  async sendWhatsAppMediaMessage(
+    userId: string,
+    to: string,
+    mediaUrl: string,
+    mediaType: 'image' | 'video' | 'document',
+    caption?: string
+  ): Promise<{ chatId: string; messageId?: string } | null> {
+    const sock = this.getClient(userId);
+    if (!sock) return null;
+
+    const chatId = this.resolveContactJid(userId, to);
+    const media = {
+      [mediaType === 'image' ? 'image' : mediaType === 'video' ? 'video' : 'document']: { url: mediaUrl },
+      caption
+    };
+    const sent = await sock.sendMessage(chatId, media);
+    return { chatId, messageId: sent?.key?.id };
+  }
+
   async getAdminOverview(userId: string) {
     const status = await this.getStatusOrStart(userId);
     const config = this.getAdminConfigPublic(userId);

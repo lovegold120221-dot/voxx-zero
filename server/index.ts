@@ -214,7 +214,16 @@ app.post('/api/whatsapp/tool', async (req, res) => {
     let result: any;
     switch (tool) {
       case 'sendMessage':
-        result = await waTools.handleSendMessage(waManager, userId, effectivePermissions, params.to, params.text);
+        result = await waTools.handleSendMessage(
+          waManager, 
+          userId, 
+          effectivePermissions, 
+          params.to, 
+          params.text, 
+          params.mediaUrl, 
+          params.mediaType, 
+          params.caption
+        );
         break;
       case 'readChats':
         result = await waTools.handleReadChats(waManager, userId, effectivePermissions, params.limit);

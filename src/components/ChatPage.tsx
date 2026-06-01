@@ -8,6 +8,8 @@ interface ChatMessage {
   text: string;
   sessionId?: string;
   timestamp: any;
+  attachmentUrl?: string;
+  attachmentName?: string;
 }
 
 interface SessionSummary {
@@ -336,6 +338,37 @@ export function ChatPage({
                         <p className="whitespace-pre-wrap break-words">{msg.text}</p>
                       )}
                     </div>
+                    {msg.attachmentUrl && (
+                      <div className="mt-2 pt-2 border-t border-white/10">
+                        {msg.attachmentUrl.match(/\.(jpeg|jpg|gif|png|webp)/i) || msg.attachmentUrl.includes('image') ? (
+                          <div className="relative rounded-lg overflow-hidden border border-zinc-700 max-w-sm">
+                            <img
+                              src={msg.attachmentUrl}
+                              alt={msg.attachmentName || 'Attachment'}
+                              className="w-full h-auto object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                              onClick={() => window.open(msg.attachmentUrl, '_blank')}
+                            />
+                            {msg.attachmentName && (
+                              <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-2 py-1 text-[10px] text-zinc-300 truncate">
+                                {msg.attachmentName}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <a
+                            href={msg.attachmentUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-black/30 border border-zinc-700 hover:bg-black/50 transition-colors group"
+                          >
+                            <Paperclip className="w-3.5 h-3.5 text-zinc-400 group-hover:text-[#d0a78b]" />
+                            <span className="text-xs text-zinc-300 group-hover:text-white truncate max-w-[200px]">
+                              {msg.attachmentName || 'View Attachment'}
+                            </span>
+                          </a>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               ))}

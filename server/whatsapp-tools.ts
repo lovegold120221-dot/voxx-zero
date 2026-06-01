@@ -39,18 +39,31 @@ export async function handleSendMessage(
   permissions: Record<string, boolean> | undefined,
   to: string,
   text: string,
+  mediaUrl?: string,
+  mediaType?: 'image' | 'video' | 'document',
+  caption?: string
 ): Promise<{ ok: true; sent: boolean; chatId: string; messageId?: string } | { ok: false; error: string }> {
   const denied = requirePerm(permissions, 'send_messages');
   if (denied) return { ok: false, error: denied };
 
   const recipientError = requireText(to, 'Recipient');
   if (recipientError) return { ok: false, error: recipientError };
-  const textError = requireText(text, 'Message text');
-  if (textError) return { ok: false, error: textError };
+  
+  if (!mediaUrl) {
+    const textError = requireText(text, 'Message text');
+    if (textError) return { ok: false, error: textError };
+  }
 
   try {
     const sock = wa.getClient(userId);
     const chatId = wa.resolveContactJid(userId, to);
+
+    if (mediaUrl && mediaType) {
+      const sent = await wa.sendWhatsAppMediaMessage(userId, to, mediaUrl, mediaType, caption || text);
+      if (sent) return { ok: true, sent: true, chatId: sent.chatId, messageId: sent.messageId };
+      return { ok: false, error: 'Failed to send media message' };
+    }
+
     if (!sock) {
       const cloudSent = await wa.sendCloudTextMessage(userId, to, text);
       if (cloudSent) {

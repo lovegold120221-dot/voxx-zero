@@ -28,22 +28,6 @@ function formatPhone(digits: string): string {
   return clean ? `+${clean}` : '';
 }
 
-function formatPhone(digits: string): string {
-  const clean = (digits || '').replace(/\D/g, '');
-  return clean ? `+${clean}` : '';
-}
-
-// ─── Types ──────────────────────────────────────────────────────────
-
-function jidDigits(jid: string): string {
-  return (jid.split('@')[0] || '').replace(/\D/g, '');
-}
-
-function formatPhone(digits: string): string {
-  const clean = (digits || '').replace(/\D/g, '');
-  return clean ? `+${clean}` : '';
-}
-
 // ─── Types ──────────────────────────────────────────────────────────
 interface ChatMessage {
   role: 'user' | 'model';
@@ -194,7 +178,7 @@ BOSS/ASSISTANT DYNAMIC:
 - You are currently helping your Boss while you chat.
 - ⚠️ CRITICAL: NEVER call ANY tool unless the user explicitly and directly asked for it. Do NOT call tools proactively, preemptively, "just in case," or because you think it might be helpful. If the user is silent, talking about something unrelated to a tool's function, or you are filling silence — do NOT call tools. Only call tools in direct response to a specific user request. If the user is watching a video, browsing, or doing anything that doesn't involve a direct ask — keep your mouth shut and do nothing.
 - When you execute a tool, do not stop the conversation. Mention it normally. The user asking you to do something IS their permission — execute immediately. Do NOT ask "may I?" or "do you want me to?" or "shall I?" after they already told you to do it. Just do it and tell them you're doing it.
-- EXCEPTION — Only ask confirmation for destructive actions: deleting emails, deleting calendar events, deleting files, or sending irreversible messages. For read-only actions (reading chats, checking contacts, listing emails, viewing calendar), execute immediately — the user's request is permission enough.
+- EXCEPTION — Only ask confirmation for destructive actions: deleting emails, deleting calendar events, deleting files. For sending messages via WhatsApp when the user explicitly provides the message content and recipient, execute immediately — the user's request is permission enough. For read-only actions (reading chats, checking contacts, listing emails, viewing calendar), execute immediately — the user's request is permission enough.
 - NEVER simulate, fake, or pretend to execute a tool. If you have a tool available for what the user asked, call the real tool with real parameters. Do not describe what you would hypothetically do — do it. Do not say "I can check that for you" — just check it.
 - Use phrases like "Let me scan that for you...", "I can pull up your calendar if you want...", "Wait, let me just finish this draft for you...", or "I'm looking at the screen now...".
 - Integrate the work into your conversational flow.
@@ -2694,8 +2678,12 @@ ${historyContext}
                        action: { type: Type.STRING, description: "The WhatsApp action: sendMessage, readChats, getContacts, addContact, getGroups, sendGroupMessage, readGroupChat, getMessageHistory, getCalls. IMPORTANT: For getContacts, 'getContacts' returns contacts with TWO name fields for each person: 'name' is what the user saved the contact as in their phonebook, and 'notify' is the contact's own public WhatsApp profile name (what they call themselves, also called pushName). Always show BOTH names when listing contacts. For readChats, getMessageHistory, and getCalls: messages/calls include a 'fromMe' boolean field: true means the current user (you, Beatrice) sent it/made the call, false means the other person/contact sent it/received the call." },
                        to: { type: Type.STRING, description: "Recipient JID (e.g., 1234567890@s.whatsapp.net) or international phone number (e.g., 447700900000). CRITICAL: Always include the country code. If the user provides a local number, you MUST prepend the country code from their own WhatsApp number (waPhone). Prefer using the full JID found in getContacts." },
 
-                      text: { type: Type.STRING, description: "Message text (for sendMessage, sendGroupMessage). IMPORTANT — Before sending, you MUST first call getMessageHistory to read the user's WhatsApp History (their real WhatsApp conversations from the WhatsApp server — NOT the BeatriceAppConversations History). Look for messages with fromMe:true — those are the user's own outgoing WhatsApp messages. Analyze their real WhatsApp style: tone, abbreviations, emoji, punctuation, caps, language mixing, length, and how they talk to that person. Then write in THAT exact style. NEVER write in your own voice — become the user's WhatsApp voice." },
+                       text: { type: Type.STRING, description: "Message text (for sendMessage, sendGroupMessage). IMPORTANT — Before sending, you MUST first call getMessageHistory to read the user's WhatsApp History (their real WhatsApp conversations from the WhatsApp server — NOT the BeatriceAppConversations History). Look for messages with fromMe:true — those are the user's own outgoing WhatsApp messages. Analyze their real WhatsApp style: tone, abbreviations, emoji, punctuation, caps, language mixing, length, and how they talk to that person. Then write in THAT exact style. NEVER write in your own voice — become the user's WhatsApp voice." },
+                       mediaUrl: { type: Type.STRING, description: "URL of the media attachment to send (if any). Required if mediaType is provided." },
+                       mediaType: { type: Type.STRING, description: "Type of media attachment (image, video, or document)." },
+                       caption: { type: Type.STRING, description: "Caption for the media attachment." },
                       name: { type: Type.STRING, description: "Contact/group name (for addContact, getMessageHistory). For addContact: Baileys/WhatsApp Web does NOT support adding contacts — it will return an error. Tell the user to save the contact on their phone instead." },
+
                       number: { type: Type.STRING, description: "Contact phone number (for addContact)" },
                       chatId: { type: Type.STRING, description: "Chat JID or phone number (for getMessageHistory, readGroupChat)" },
                       groupId: { type: Type.STRING, description: "Group JID ending in @g.us (for sendGroupMessage, readGroupChat)" },
@@ -4053,7 +4041,11 @@ ${historyContext}
                 </div>
               </section>
 
-              <WhatsAppSettings userId={user.uid} />
+              <WhatsAppSettings 
+                userId={user.uid} 
+                waPermissions={waPermissions}
+                onTogglePermission={toggleWaPermission}
+              />
 
               {/* Skills Dashboard */}
               <section className="space-y-3">
@@ -4075,60 +4067,10 @@ ${historyContext}
                         <span className="text-[13px] text-zinc-200 font-bold tracking-wide">{s.label}</span>
                         <span className="text-[10px] text-zinc-500 font-medium">{s.desc}</span>
                       </div>
-                      <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full ${isGoogleLinked(user) ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-zinc-800/50 border border-zinc-700/30'}`}>
-                        <div className={`w-1.5 h-1.5 rounded-full ${isGoogleLinked(user) ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.5)]' : 'bg-zinc-600'}`} />
-                        <span className={`text-[10px] font-bold uppercase tracking-wider ${isGoogleLinked(user) ? 'text-emerald-400' : 'text-zinc-500'}`}>
-                          {isGoogleLinked(user) ? 'On' : 'Off'}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-
-                  {/* WhatsApp Skills */}
-                  <div className="p-4 border-b border-white/[0.03] border-t border-white/[0.06]">
-                    <span className="text-[10px] font-bold tracking-[0.15em] uppercase text-zinc-500">WhatsApp Skills</span>
-                  </div>
-                  {[
-                    { key: 'send_messages', label: 'Send Messages', desc: 'Send texts on your behalf' },
-                    { key: 'read_chats', label: 'Read Chats', desc: 'Scan incoming messages' },
-                    { key: 'access_contacts', label: 'Access Contacts', desc: 'Search contact records' },
-                    { key: 'manage_contacts', label: 'Manage Contacts', desc: 'Register or update contacts' },
-                    { key: 'access_groups', label: 'Access Groups', desc: 'Browse joined groups' },
-                    { key: 'send_group_messages', label: 'Send Group Messages', desc: 'Post to groups' },
-                    { key: 'read_group_chats', label: 'Read Group Chats', desc: 'Analyze group discussions' },
-                    { key: 'view_message_history', label: 'View Message History', desc: 'Read past conversation logs' },
-                  ].map((s, i, arr) => (
-                    <div key={s.key} className={`px-5 py-3 flex items-center justify-between ${i !== arr.length - 1 ? 'border-b border-white/[0.03]' : ''}`}>
-                      <div className="flex flex-col gap-0.5 pr-4">
-                        <span className="text-[13px] text-zinc-200 font-bold tracking-wide">{s.label}</span>
-                        <span className="text-[10px] text-zinc-500 font-medium">{s.desc}</span>
-                      </div>
-                      <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full ${waPermissions[s.key] ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-zinc-800/50 border border-zinc-700/30'}`}>
-                        <div className={`w-1.5 h-1.5 rounded-full ${waPermissions[s.key] ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.5)]' : 'bg-zinc-600'}`} />
-                        <span className={`text-[10px] font-bold uppercase tracking-wider ${waPermissions[s.key] ? 'text-emerald-400' : 'text-zinc-500'}`}>
-                          {waPermissions[s.key] ? 'On' : 'Off'}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-
-                  {/* Phone Skills */}
-                  <div className="p-4 border-b border-white/[0.03] border-t border-white/[0.06]">
-                    <span className="text-[10px] font-bold tracking-[0.15em] uppercase text-zinc-500">Phone Skills</span>
-                  </div>
-                  {[
-                    { key: 'make_calls', label: 'Make Phone Calls', desc: 'Dial via native phone dialer' },
-                    { key: 'make_whatsapp_calls', label: 'WhatsApp Calls', desc: 'Voice and video calls on WhatsApp' },
-                  ].map((s, i, arr) => (
-                    <div key={s.key} className={`px-5 py-3 flex items-center justify-between ${i !== arr.length - 1 ? 'border-b border-white/[0.03]' : ''}`}>
-                      <div className="flex flex-col gap-0.5 pr-4">
-                        <span className="text-[13px] text-zinc-200 font-bold tracking-wide">{s.label}</span>
-                        <span className="text-[10px] text-zinc-500 font-medium">{s.desc}</span>
-                      </div>
-                      <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full ${waPermissions[s.key] ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-zinc-800/50 border border-zinc-700/30'}`}>
-                        <div className={`w-1.5 h-1.5 rounded-full ${waPermissions[s.key] ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.5)]' : 'bg-zinc-600'}`} />
-                        <span className={`text-[10px] font-bold uppercase tracking-wider ${waPermissions[s.key] ? 'text-emerald-400' : 'text-zinc-500'}`}>
-                          {waPermissions[s.key] ? 'On' : 'Off'}
+                      <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full ${googleToken ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-zinc-800/50 border border-zinc-700/30'}`}>
+                        <div className={`w-1.5 h-1.5 rounded-full ${googleToken ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.5)]' : 'bg-zinc-600'}`} />
+                        <span className={`text-[10px] font-bold uppercase tracking-wider ${googleToken ? 'text-emerald-400' : 'text-zinc-500'}`}>
+                          {googleToken ? 'On' : 'Off'}
                         </span>
                       </div>
                     </div>
