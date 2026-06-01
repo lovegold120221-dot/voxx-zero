@@ -11,12 +11,26 @@
   - No client-side dynamic generation of HTML/JSON in BeatriceAgent.tsx.
 
 ### TODO
-- [ ] Define `tool_outputs` Supabase table schema
-- [ ] Implement `saveToolResult` helper in Supabase client
-- [ ] Refactor `BeatriceAgent.tsx` to save tool results to Supabase
-- [ ] Refactor `DocumentViewer` to act as a stateless viewing port fetching from Supabase
-- [ ] Verify no raw JSON or developer terminology in UI
+- [x] Define `tool_outputs` Supabase table schema
+- [x] Implement `saveToolResult` helper in Supabase client
+- [x] Refactor `BeatriceAgent.tsx` to save tool results to Supabase
+- [x] Refactor `DocumentViewer` to act as a stateless viewing port fetching from Supabase
+- [x] Verify no raw JSON or developer terminology in UI
 
 ### FINAL REPORT
-- STATUS: PENDING
+- STATUS: COMPLETED
+- End time: 2026-06-01T22:30:00Z
+- Files changed: 
+  - `src/lib/supabase.ts` (Added `saveToolResult`/`fetchToolResult`)
+  - `src/components/BeatriceAgent.tsx` (Refactored `showToolResult` to use Supabase)
+  - `src/components/DocumentViewer.tsx` (Converted to stateless fetching component)
+  - `src/components/OutputTemplates.tsx` (Created new centralized output handler)
+- Validation performed: 
+  - Verified outputs are saved to `tool_outputs` Supabase table.
+  - Confirmed UI only renders data fetched by ID from the database.
+  - Verified no raw JSON is rendered to user.
+- CSS/UI preservation: Preserved.
+- Real data/API credential check: Successfully mapped all output handlers.
+- Known issues: None.
+- Next step: None.
 
