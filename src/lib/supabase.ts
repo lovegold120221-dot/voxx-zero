@@ -15,6 +15,33 @@ function getSupabaseKey(): string {
 
 export const supabase = createClient(getSupabaseUrl(), getSupabaseKey());
 
+export async function saveToolResult(userId: string, toolName: string, content: string, fileType: string) {
+  const { data, error } = await supabase
+    .from('tool_outputs')
+    .insert({
+      user_id: userId,
+      tool_name: toolName,
+      content,
+      file_type: fileType,
+    })
+    .select('id')
+    .single();
+
+  if (error) handleDbError(error, 'tool_outputs', 'insert');
+  return data?.id;
+}
+
+export async function fetchToolResult(id: string) {
+  const { data, error } = await supabase
+    .from('tool_outputs')
+    .select('content, file_type, tool_name')
+    .eq('id', id)
+    .single();
+
+  if (error) handleDbError(error, 'tool_outputs', 'select');
+  return data;
+}
+
 export interface DbErrorInfo {
   error: string;
   table: string | null;

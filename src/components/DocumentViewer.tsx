@@ -1,11 +1,11 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'motion/react';
 import { X, ExternalLink, FileText, Image, FileDown, ChevronDown, Loader2 } from 'lucide-react';
+import { fetchToolResult } from '../lib/supabase';
+import { auth } from '../firebase';
 
 interface DocumentViewerProps {
-  title: string;
-  content: string;
-  fileType?: string;
+  resultId: string;
   onClose: () => void;
   personaName: string;
 }
@@ -13,16 +13,37 @@ interface DocumentViewerProps {
 type DownloadFormat = 'html' | 'pdf' | 'doc' | 'png';
 
 export function DocumentViewer({
-  title,
-  content,
-  fileType = 'html',
+  resultId,
   onClose,
   personaName,
 }: DocumentViewerProps) {
   const [mode, setMode] = useState<'card' | 'full'>('card');
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [downloading, setDownloading] = useState<DownloadFormat | null>(null);
+  const [doc, setDoc] = useState<{ content: string; fileType: string; tool_name: string } | null>(null);
+  const [loading, setLoading] = useState(true);
   const previewRef = useRef<HTMLIFrameElement>(null);
+
+  const title = doc?.tool_name || 'Document';
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await fetchToolResult(resultId);
+        if (data) {
+          setDoc({
+            content: data.content,
+            fileType: data.file_type,
+            tool_name: data.tool_name
+          });
+        }
+      } catch (err) {
+        console.error("Failed to load result:", err);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [resultId]);
   const captureRef = useRef<HTMLDivElement>(null);
 
   const handleDownloadBlob = useCallback((blob: Blob, ext: string, mime: string) => {
@@ -37,6 +58,8 @@ export function DocumentViewer({
   }, [title]);
 
   const downloadAs = useCallback(async (format: DownloadFormat) => {
+    if (!doc) return;
+    const { content } = doc;
     setDownloading(format);
     setDownloadOpen(false);
 
@@ -138,7 +161,7 @@ ${content.replace(/<!DOCTYPE html>[\s\S]*?<body[^>]*>/i, '').replace(/<\/body>[\
             heightLeft -= 297;
           }
 
-          pdf.save(`${title.replace(/\s+/g, '-').toLowerCase()}.pdf`);
+          pdf.save(`document.pdf`);
           setDownloading(null);
         }
       } catch (err) {
@@ -150,11 +173,12 @@ ${content.replace(/<!DOCTYPE html>[\s\S]*?<body[^>]*>/i, '').replace(/<\/body>[\
       console.error('Download failed:', err);
       setDownloading(null);
     }
-  }, [content, title, personaName, handleDownloadBlob]);
+  }, [doc, personaName, handleDownloadBlob]);
 
   const openFullPreview = () => {
-    if (fileType !== 'html') {
-      const blob = new Blob([content], { type: 'text/html' });
+    if (!doc) return;
+    if (doc.fileType !== 'html') {
+      const blob = new Blob([doc.content], { type: 'text/html' });
       const url = URL.createObjectURL(blob);
       window.open(url, '_blank');
       return;
@@ -171,6 +195,8 @@ ${content.replace(/<!DOCTYPE html>[\s\S]*?<body[^>]*>/i, '').replace(/<\/body>[\
 
   // ── Full page preview mode ──
   if (mode === 'full') {
+    if (loading || !doc) return <div className="fixed inset-0 z-50 flex items-center justify-center bg-black"><Loader2 className="w-8 h-8 text-white animate-spin" /></div>;
+
     return (
       <motion.div
         initial={{ opacity: 0 }}
@@ -190,7 +216,7 @@ ${content.replace(/<!DOCTYPE html>[\s\S]*?<body[^>]*>/i, '').replace(/<\/body>[\
               <X className="w-4 h-4" />
             </button>
             <div className="min-w-0">
-              <p className="text-sm font-medium text-zinc-200 truncate">{title}</p>
+              <p className="text-sm font-medium text-zinc-200 truncate">Document Preview</p>
               <p className="text-[9px] text-zinc-500 uppercase tracking-widest">live preview</p>
             </div>
           </div>
@@ -240,7 +266,7 @@ ${content.replace(/<!DOCTYPE html>[\s\S]*?<body[^>]*>/i, '').replace(/<\/body>[\
         <div className="flex-1 bg-white relative overflow-hidden">
           <iframe
             ref={previewRef}
-            srcDoc={fileType === 'html' ? content : `<pre style="font-family:monospace;white-space:pre-wrap;padding:20px;font-size:14px;color:#000;background:#fff">${content.replace(/</g, '&lt;')}</pre>`}
+            srcDoc={doc.fileType === 'html' ? doc.content : `<pre style="font-family:monospace;white-space:pre-wrap;padding:20px;font-size:14px;color:#000;background:#fff">${doc.content.replace(/</g, '&lt;')}</pre>`}
             className="absolute inset-0 w-full h-full border-0"
             sandbox="allow-scripts"
             title="Live Document Preview"
@@ -251,6 +277,8 @@ ${content.replace(/<!DOCTYPE html>[\s\S]*?<body[^>]*>/i, '').replace(/<\/body>[\
   }
 
   // ── Card mode (initial view) ──
+  if (loading || !doc) return <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"><Loader2 className="w-8 h-8 text-white animate-spin" /></div>;
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -272,8 +300,8 @@ ${content.replace(/<!DOCTYPE html>[\s\S]*?<body[^>]*>/i, '').replace(/<\/body>[\
         </button>
 
         <div className="text-center flex flex-col items-center">
-          <h1 className="text-sm font-semibold tracking-wide text-[#d0a78b]">{personaName}</h1>
-          <p className="text-[9px] text-zinc-500 tracking-[0.2em] lowercase -mt-0.5">document workspace</p>
+          <h1 className="text-sm font-semibold tracking-wide text-[#d0a78b]">Document Workspace</h1>
+          <p className="text-[9px] text-zinc-500 tracking-[0.2em] lowercase -mt-0.5">preview mode</p>
         </div>
 
         <div className="w-9" />
@@ -288,9 +316,9 @@ ${content.replace(/<!DOCTYPE html>[\s\S]*?<body[^>]*>/i, '').replace(/<\/body>[\
               <FileText className="w-5 h-5 text-[#d0a78b]" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-zinc-200 truncate">{title}</p>
+              <p className="text-sm font-medium text-zinc-200 truncate">Result</p>
               <p className="text-[10px] text-zinc-500 uppercase tracking-wider">
-                {fileType === 'html' ? 'Web Document' : 'Text File'}
+                {doc.fileType === 'html' ? 'Web Document' : 'Text File'}
               </p>
             </div>
           </div>
@@ -298,7 +326,7 @@ ${content.replace(/<!DOCTYPE html>[\s\S]*?<body[^>]*>/i, '').replace(/<\/body>[\
           {/* Live Preview — ALWAYS shown, no source code toggle */}
           <div className="flex-1 min-h-[350px] bg-white relative">
             <iframe
-              srcDoc={fileType === 'html' ? content : `<pre style="font-family:monospace;white-space:pre-wrap;padding:20px;font-size:14px;color:#000;background:#fff">${content.replace(/</g, '&lt;')}</pre>`}
+              srcDoc={doc.fileType === 'html' ? doc.content : `<pre style="font-family:monospace;white-space:pre-wrap;padding:20px;font-size:14px;color:#000;background:#fff">${doc.content.replace(/</g, '&lt;')}</pre>`}
               className="absolute inset-0 w-full h-full border-0"
               sandbox="allow-scripts"
               title="Document Preview"

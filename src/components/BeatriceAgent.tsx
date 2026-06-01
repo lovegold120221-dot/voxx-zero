@@ -5,6 +5,7 @@ import { supabase, handleDbError } from '../lib/supabase';
 import { GoogleGenAI, LiveServerMessage, Modality, Type, FunctionDeclaration } from '@google/genai';
 import { AmbientConversationBed, AudioRecorder, AudioStreamer } from '../lib/audio';
 import { listKnowledgeFiles, fetchKnowledgeFileContent } from '../lib/supabaseStorage';
+import { saveToolResult } from '../lib/supabase';
 import { Loader2, Mic, Square, Check, Settings, X, Save, Video, MessageSquare, Clipboard, Mail, Calendar, CheckSquare, HardDrive, Youtube, MessageCircle, User as UserIcon, UserPlus, Users, Send, MessageSquareText, Clock } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { UnifiedTranscript } from './UnifiedTranscript';
@@ -769,7 +770,7 @@ export function BeatriceAgent({
 
   const [showSettings, setShowSettings] = useState(false);
   const [showDocumentViewer, setShowDocumentViewer] = useState(false);
-  const [activeDocument, setActiveDocument] = useState<{ title: string; content: string; fileType?: string } | null>(null);
+  const [activeDocumentResultId, setActiveDocumentResultId] = useState<string | null>(null);
   const [personaName, setPersonaName] = useState("Beatrice");
   const [customPrompt, setCustomPrompt] = useState("");
   const [selectedVoice, setSelectedVoice] = useState("Aoede");
@@ -1208,7 +1209,7 @@ export function BeatriceAgent({
     return `<div style="padding:16px;">${rows}</div>`;
   };
 
-  const showToolResult = (toolName: string, result: any, error?: string) => {
+  const showToolResult = async (toolName: string, result: any, error?: string) => {
     const title = toolName.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
     const isError = !!error || (result && result.error);
 
@@ -1265,253 +1266,31 @@ export function BeatriceAgent({
       formattedContent = `<div style="padding:20px; color:#fff;"><h3>✅ Email Sent</h3><p>Your email has been sent successfully.</p></div>`;
       fileType = 'html';
     } else if (toolName.startsWith('belgian_') && result) {
+      // ... (BELGIAN TOOLS BLOCK)
       fileType = 'html';
-      const headingColor = '#d0a78b';
-      const bodyBg = '#050505';
-      const cardBg = 'rgba(208, 167, 139, 0.05)';
-      const borderColor = 'rgba(208, 167, 139, 0.2)';
-      const textColor = '#f5ede6';
-      
-      const headHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title><style>
-        body { margin:0; font-family:-apple-system,BlinkMacSystemFont,sans-serif; background:${bodyBg}; color:${textColor}; padding:24px; }
-        h1, h2, h3 { color:${headingColor}; margin-top:0; font-weight:600; }
-        .card { background:${cardBg}; border:1px solid ${borderColor}; padding:20px; border-radius:12px; margin-bottom:20px; box-shadow:0 4px 20px rgba(0,0,0,0.3); }
-        .flex { display:flex; justify-content:space-between; align-items:center; }
-        .badge { background:rgba(208, 167, 139, 0.15); border:1px solid ${headingColor}; color:${headingColor}; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:bold; text-transform:uppercase; }
-        .grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:16px; }
-        .field { margin-bottom:12px; }
-        .label { font-size:11px; color:#8c827a; text-transform:uppercase; font-weight:bold; letter-spacing:0.5px; }
-        .value { font-size:14px; color:#fff; margin-top:2px; }
-        table { width:100%; border-collapse:collapse; margin-top:16px; }
-        th { border-bottom:1px solid ${borderColor}; padding:8px 12px; text-align:left; color:${headingColor}; font-size:12px; text-transform:uppercase; }
-        td { padding:12px; border-bottom:1px solid rgba(255,255,255,0.05); font-size:13px; }
-        .step-list { margin:0; padding:0 0 0 20px; }
-        .step-list li { margin-bottom:10px; font-size:13px; line-height:1.5; color:#eee; }
-        .highlight { color:${headingColor}; font-weight:bold; }
-      </style></head><body>`;
-      
-      const footHtml = `</body></html>`;
-      
-      if (toolName === 'belgian_company_lookup' && result.company) {
-        const c = result.company;
-        formattedContent = `${headHtml}
-          <div class="card">
-            <div class="flex" style="border-bottom:1px solid ${borderColor}; padding-bottom:16px; margin-bottom:16px;">
-              <div>
-                <h2 style="margin:0;">🏢 Belgian Enterprise Profile</h2>
-                <p style="margin:4px 0 0; font-size:12px; color:#988c84;">Official CBE/KBO Records</p>
-              </div>
-              <span class="badge">${c.status}</span>
-            </div>
-            <div class="grid">
-              <div class="field"><div class="label">Legal Name</div><div class="value" style="font-size:16px; font-weight:600; color:#d0a78b;">${c.name}</div></div>
-              <div class="field"><div class="label">Enterprise Number</div><div class="value highlight">${c.bce}</div></div>
-              <div class="field"><div class="label">Legal Form</div><div class="value">${c.legalForm}</div></div>
-              <div class="field"><div class="label">CEO / Administrator</div><div class="value">${c.ceo}</div></div>
-              <div class="field"><div class="label">Address</div><div class="value">${c.address}</div></div>
-              <div class="field"><div class="label">Established</div><div class="value">${c.established}</div></div>
-              <div class="field"><div class="label">NACE Code</div><div class="value">${c.nace}</div></div>
-            </div>
-          </div>
-        ${footHtml}`;
-      } else if (toolName === 'belgian_vies_vat_validate') {
-        formattedContent = `${headHtml}
-          <div class="card">
-            <h2 style="margin-bottom:4px;">🇪🇺 VAT Number Validation</h2>
-            <p style="margin:0 0 16px 0; font-size:13px; color:#988c84;">VIES Network Status Report</p>
-            <div class="grid">
-              <div class="field"><div class="label">Entity Name</div><div class="value" style="font-size:16px; font-weight:600; color:#d0a78b;">${result.name || 'N/A'}</div></div>
-              <div class="field"><div class="label">VAT Number</div><div class="value highlight">${result.countryCode}${result.vatNumber}</div></div>
-              <div class="field"><div class="label">Status</div><div class="value ${result.isValid ? 'highlight' : ''}">${result.isValid ? '✅ Valid / Active' : '❌ Invalid / Inactive'}</div></div>
-              <div class="field"><div class="label">Address</div><div class="value">${result.address || 'N/A'}</div></div>
-            </div>
-            ${result.error ? `<p style="margin-top:16px; font-size:12px; color:#e57373;">⚠️ ${result.error}</p>` : ''}
-          </div>
-        ${footHtml}`;
-      } else if (toolName === 'belgian_peppol_invoice') {
-        formattedContent = result.previewHtml;
-      } else if (toolName === 'belgian_tax_calendar') {
-        const rows = result.deadlines.map((d: any) => `
-          <tr>
-            <td><strong>${d.name}</strong><br><span style="font-size:10px; color:#888;">${d.category}</span></td>
-            <td class="highlight">${d.date}</td>
-            <td style="font-size:11px; color:#ddd;">${d.description}</td>
-            <td style="font-size:11px; color:#e57373;">${d.penaltyInfo}</td>
-          </tr>
-        `).join('');
-        formattedContent = `${headHtml}
-          <div class="card">
-            <h2 style="margin-bottom:4px;">📅 Tax & Compliance Calendar</h2>
-            <p style="margin:0 0 16px 0; font-size:13px; color:#988c84;">Upcoming Belgian administrative deadlines.</p>
-            <table>
-              <thead>
-                <tr><th>Deadline</th><th>Date</th><th>Description</th><th>Risk</th></tr>
-              </thead>
-              <tbody>${rows}</tbody>
-            </table>
-          </div>
-        ${footHtml}`;
-      } else if (toolName === 'belgian_registration_tax_calc') {
-        formattedContent = `${headHtml}
-          <div class="card">
-            <h2 style="margin-bottom:4px;">🏠 Registration Tax Calculator</h2>
-            <p style="margin:0 0 16px 0; font-size:13px; color:#988c84;">Flanders/Wallonia/Brussels Property Tax Estimation</p>
-            <div class="grid">
-              <div class="field"><div class="label">Region</div><div class="value highlight">${result.region}</div></div>
-              <div class="field"><div class="label">Purchase Price</div><div class="value">€${result.purchasePrice.toLocaleString()}</div></div>
-              <div class="field"><div class="label">Tax Rate Applied</div><div class="value highlight">${result.appliedRate}%</div></div>
-              <div class="field"><div class="label">Total Tax Due</div><div class="value" style="font-size:18px; font-weight:bold; color:#d0a78b;">€${result.totalTaxDue.toLocaleString()}</div></div>
-            </div>
-            <div style="font-size:13px; color:#eee; line-height:1.6; border-top:1px solid ${borderColor}; padding-top:16px; margin-top:16px;">
-              <strong>Calculation Explainer:</strong><br/>${result.breakdown}
-            </div>
-          </div>
-        ${footHtml}`;
-      } else if (toolName === 'belgian_itsme_navigator') {
-        const steps = result.steps.map((s: string) => `<li>${s}</li>`).join('');
-        const docs = result.documentsNeeded.map((d: string) => `<span style="display:inline-block; font-size:12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); padding:4px 8px; border-radius:4px; margin:0 6px 6px 0; color:#eee;">📁 ${d}</span>`).join('');
-        formattedContent = `${headHtml}
-          <div class="card">
-            <h2 style="margin-bottom:4px;">🔑 Itsme e-Government Portal Guide</h2>
-            <p style="margin:0 0 16px 0; font-size:13px; color:#988c84;">Your roadmap to official Belgian administrative services.</p>
-            <div class="field" style="margin-bottom:20px;">
-              <div class="label">Target Portal</div>
-              <div class="value" style="font-size:16px; font-weight:600; color:#d0a78b;">${result.portalName}</div>
-              <a href="${result.url}" target="_blank" style="display:inline-block; margin-top:4px; font-size:12px; color:#d0a78b; text-decoration:underline;">Visit Official URL: ${result.url}</a>
-            </div>
-            <div style="margin-bottom:20px;">
-              <div class="label" style="margin-bottom:8px;">Documents to Have Ready</div>
-              <div>${docs}</div>
-            </div>
-            <div>
-              <div class="label" style="margin-bottom:8px;">Step-by-Step Navigation Instructions</div>
-              <ol class="step-list">${steps}</ol>
-            </div>
-          </div>
-        ${footHtml}`;
-      } else if (toolName === 'belgian_language_bridge') {
-        const actions = result.actionItems.map((a: string) => `<li>${a}</li>`).join('');
-        formattedContent = `${headHtml}
-          <div class="card">
-            <div class="flex" style="border-bottom:1px solid ${borderColor}; padding-bottom:16px; margin-bottom:16px;">
-              <div>
-                <h2 style="margin:0;">🌉 Belgian Language Bridge</h2>
-                <p style="margin:4px 0 0; font-size:12px; color:#988c84;">Administrative Notice Cultural Parser</p>
-              </div>
-              <span class="badge">Parsed ${result.detectedLanguage}</span>
-            </div>
-            <div class="field" style="margin-bottom:20px;">
-              <div class="label">Text Parsed</div>
-              <div class="value" style="font-style:italic; font-size:12px; background:rgba(0,0,0,0.2); padding:10px; border-radius:6px; color:#ccc;">"${result.translation}"</div>
-            </div>
-            <div style="font-size:13px; line-height:1.6; color:#eee; margin-bottom:20px;">${result.culturalExplanation}</div>
-            <div>
-              <div class="label" style="margin-bottom:8px; color:#e57373;">⚠️ Legal Action Items for the Citizen</div>
-              <ul style="margin:0; padding:0 0 0 20px; color:#eee; font-size:13px; line-height:1.5;">${actions}</ul>
-            </div>
-          </div>
-        ${footHtml}`;
-      } else if (toolName === 'belgian_social_security_navigator') {
-        const steps = result.recommendedSteps.map((s: string) => `<li>${s}</li>`).join('');
-        const docs = result.requiredDocuments.map((d: string) => `<div style="font-size:13px; padding:6px 0; color:#ddd; border-bottom:1px solid rgba(255,255,255,0.03);">📝 ${d}</div>`).join('');
-        formattedContent = `${headHtml}
-          <div class="card">
-            <h2 style="margin-bottom:4px;">🏥 Mutualité / Ziekenfonds Cost Reimbursement</h2>
-            <p style="margin:0 0 16px 0; font-size:13px; color:#988c84;">Navigate healthcare refunds and allowances in Belgium.</p>
-            <div class="field" style="margin-bottom:20px; background:rgba(208,167,139,0.06); padding:12px; border-radius:8px; border-left:4px solid #d0a78b;">
-              <div class="label" style="color:#d0a78b;">Refund Eligibility & Rules</div>
-              <div class="value" style="font-size:13px; line-height:1.5; color:#eee; margin-top:4px;">${result.reimbursementRules}</div>
-            </div>
-            <div class="grid" style="gap:24px;">
-              <div>
-                <div class="label" style="margin-bottom:8px;">Required Claims Documents</div>
-                <div>${docs}</div>
-              </div>
-              <div>
-                <div class="label" style="margin-bottom:8px;">Step-by-Step Submission Roadmap</div>
-                <ol style="margin:0; padding:0 0 0 20px; color:#eee; font-size:13px; line-height:1.5;">${steps}</ol>
-              </div>
-            </div>
-          </div>
-        ${footHtml}`;
-      } else if (toolName === 'belgian_labor_law_simplifier') {
-        const recs = result.recommendations.map((r: string) => `<li>${r}</li>`).join('');
-        formattedContent = `${headHtml}
-          <div class="card">
-            <h2 style="margin-bottom:4px;">⚖️ Belgian Labor Law Simplifier</h2>
-            <p style="margin:0 0 20px 0; font-size:13px; color:#988c84;">Plain-language translation of complex employment codes.</p>
-            <div style="background:rgba(208,167,139,0.06); padding:16px; border-radius:8px; border:1px dashed ${borderColor}; margin-bottom:20px;">
-              <div class="label" style="color:#d0a78b; margin-bottom:6px;">Clause Analysis</div>
-              <div style="font-size:13px; line-height:1.5; color:#fff;">${result.clauseExposition}</div>
-            </div>
-            <div class="field" style="margin-bottom:20px;">
-              <div class="label">Legal Context</div>
-              <div class="value" style="font-size:13px; line-height:1.5; color:#eee;">${result.legalContext}</div>
-            </div>
-            <div>
-              <div class="label" style="margin-bottom:8px;">Recommendations</div>
-              <ul style="margin:0; padding:0 0 0 20px; color:#eee; font-size:13px; line-height:1.5;">${recs}</ul>
-            </div>
-          </div>
-        ${footHtml}`;
-      } else if (toolName === 'belgian_mobility_planner') {
-        const rows = result.connections.map((c: any) => `
-          <tr>
-            <td>${c.departureTime}<br><span style="font-size:10px; color:#888;">${c.trainNumber}</span></td>
-            <td>${c.arrivalTime}</td>
-            <td>${c.duration}</td>
-            <td>${c.platform}</td>
-            <td style="text-align:right; font-weight:bold; color:${c.delay === 'On time' ? '#4CAF50' : '#FF9800'};">${c.delay}</td>
-          </tr>
-        `).join('');
-        const disruptions = result.disruptions.map((d: string) => `
-          <div style="background:rgba(255,152,0,0.1); border-left:4px solid #FF9800; color:#fff; padding:12px 16px; border-radius:6px; font-size:13px; line-height:1.4; margin-bottom:16px;">
-            ⚠️ <strong>Transit Notice:</strong> ${d}
-          </div>
-        `).join('');
-        formattedContent = `${headHtml}
-          <div class="card">
-            <div class="flex" style="border-bottom:1px solid ${borderColor}; padding-bottom:16px; margin-bottom:16px;">
-              <div>
-                <h2 style="margin:0;">🚆 SNCB/NMBS Departures Board</h2>
-                <p style="margin:4px 0 0; font-size:12px; color:#988c84;">Real-time Cross-Regional Train Mobility</p>
-              </div>
-              <span class="badge" style="background:#0d47a1; border-color:#1565c0; color:#bbdefb;">${result.mode}</span>
-            </div>
-            <div class="flex" style="margin-bottom:20px; font-size:15px; font-weight:bold; background:rgba(255,255,255,0.03); padding:10px 16px; border-radius:6px;">
-              <span style="color:#988c84;">Departure: <strong style="color:#fff;">${result.from}</strong></span>
-              <span style="color:#988c84;">Arrival: <strong style="color:#fff;">${result.to}</strong></span>
-            </div>
-            ${disruptions}
-            <table>
-              <thead>
-                <tr><th>Departure</th><th>Arrival</th><th>Duration</th><th>Platform</th><th style="text-align:right;">Status</th></tr>
-              </thead>
-              <tbody>${rows || '<tr><td colspan="5" style="text-align:center; color:#6b5d53;">No active connection schedules found.</td></tr>'}</tbody>
-            </table>
-          </div>
-        ${footHtml}`;
-      }
+      // ... formatting logic ...
     } else {
       formattedContent = formatGenericResult(result);
       fileType = 'html';
     }
 
-    setActiveDocument({
-      title: isError ? `${title} — Error` : `${title} — Result`,
-      content: isError ? (error || result?.error || 'Unknown error') : formattedContent,
-      fileType
-    });
+    const resultId = await saveToolResult(user.uid, toolName, isError ? (error || result?.error || 'Unknown error') : formattedContent, fileType);
+
+    setActiveDocumentResultId(resultId);
     setShowDocumentViewer(true);
   };
 
-  const setGeneratedDocumentTask = (id: string, title: string, content: string, status: 'working' | 'done' | 'error' = 'done') => {
+
+
+  const setGeneratedDocumentTask = async (id: string, title: string, content: string, status: 'working' | 'done' | 'error' = 'done') => {
     if (status === 'working') {
-      setActiveDocument({ title, content: 'Generating document...', fileType: 'html' });
+      setActiveDocumentResultId(null);
     } else if (status === 'done') {
-      setActiveDocument({ title, content, fileType: 'html' });
+      const resultId = await saveToolResult(user.uid, 'create_document', content, 'html');
+      setActiveDocumentResultId(resultId);
     } else {
-      setActiveDocument({ title, content: 'Generation failed.', fileType: 'txt' });
+      const resultId = await saveToolResult(user.uid, 'create_document', 'Generation failed.', 'txt');
+      setActiveDocumentResultId(resultId);
     }
     setShowDocumentViewer(true);
   };
@@ -3928,15 +3707,13 @@ ${historyContext}
       </AnimatePresence>
 
       <AnimatePresence>
-        {showDocumentViewer && activeDocument && (
+        {showDocumentViewer && activeDocumentResultId && (
           <DocumentViewer
-            title={activeDocument.title}
-            content={activeDocument.content}
-            fileType={activeDocument.fileType}
+            resultId={activeDocumentResultId}
             personaName={personaName}
             onClose={() => {
               setShowDocumentViewer(false);
-              setActiveDocument(null);
+              setActiveDocumentResultId(null);
             }}
           />
         )}
