@@ -5,7 +5,7 @@ import { supabase, handleDbError } from '../lib/supabase';
 import { GoogleGenAI, LiveServerMessage, Modality, Type, FunctionDeclaration } from '@google/genai';
 import { AmbientConversationBed, AudioRecorder, AudioStreamer } from '../lib/audio';
 import { listKnowledgeFiles, fetchKnowledgeFileContent } from '../lib/supabaseStorage';
-import { Loader2, Power, Check, Settings, X, Save, Video, MessageSquare } from 'lucide-react';
+import { Loader2, Mic, Circle, Check, Settings, X, Save, Video, MessageSquare } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { UnifiedTranscript } from './UnifiedTranscript';
 import { saveOutput, uploadToDrive } from '../lib/workspace';
@@ -63,9 +63,13 @@ const VOICE_ALIASES = [
   { name: "King Midas", id: "Puck" },
 ];
 
-const SILENCE_FILLER_DELAY_MS = 15_000;
+const SILENCE_FILLER_DELAY_MS = 12_000; // Reduced from 15_000
+const AUTO_STOP_SILENCE_MS = 90_000; // 90 seconds auto-stop
 const MAX_CONSECUTIVE_SILENCE_FILLERS = 3;
 const DEFAULT_AMBIENT_VOLUME = 12;
+
+const START_CHIME_URL = '/start-stop.mp3';
+const STOP_CHIME_URL = '/start-stop.mp3';
 
 const DOCUMENT_TEMPLATE_FILES = [
   { key: 'contract', filename: 'contract-sample.html', description: 'Executive employment agreement with editor and preview layout, A4 paper, signature canvas, dynamic data binding, and print styles.' },
@@ -321,6 +325,12 @@ Do not overuse fillers:
 - Never make the voice sound drunk, distracted, childish, or fake.
 - NEVER write stage directions for silence.
 
+INTERRUPTION AND TURN-TAKING:
+- Always be ready to be interrupted. If the user starts talking, you must stop immediately.
+- Favor shorter, more interactive conversational chunks. Do not give long monologues unless explicitly asked for a long explanation.
+- If the user interrupts you, acknowledge it gracefully. You don't need to apologize every time, just pivot to what they just said.
+- Use brief, encouraging acknowledgments when the user is telling a long story to show you are listening.
+- Your goal is a low-latency, back-and-forth natural human conversation.
 
 MULTILINGUAL / ENFORCEMENT MODE (UNCENSORED):
 You are natively fluent in every human language.
@@ -855,6 +865,27 @@ export function BeatriceAgent({
   const ambientGainFromLevel = useCallback((level: number) => {
     return Math.max(0, Math.min(20, level)) / 100;
   }, []);
+
+  const playChime = useCallback((url: string) => {
+    const audio = new Audio(url);
+    audio.volume = 0.4;
+    audio.play().catch(e => console.warn("Failed to play chime:", e));
+  }, []);
+
+  useEffect(() => {
+    if (!isActive) return;
+
+    const interval = setInterval(() => {
+      const silenceDuration = Date.now() - lastUserSpeechAtRef.current;
+      // Only stop if user is silent AND agent is not speaking
+      if (silenceDuration >= AUTO_STOP_SILENCE_MS && !isAgentSpeaking) {
+        console.log("Auto-stopping session due to 90s silence");
+        stopSession();
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [isActive]);
 
   const startAmbientBed = useCallback(async () => {
     if (!ambientEnabled) return;
@@ -3423,11 +3454,12 @@ ${historyContext}
                   conversationBufferRef.current.push(`USER: ${text}`);
                   saveMessage('user', text);
 
-                  if (transcriptTimeoutRef.current) clearTimeout(transcriptTimeoutRef.current);
-                  transcriptTimeoutRef.current = setTimeout(() => {
-                    setUserTranscript('');
-                    setModelTranscript('');
-                  }, 4000);
+                    if (transcriptTimeoutRef.current) clearTimeout(transcriptTimeoutRef.current);
+                    transcriptTimeoutRef.current = setTimeout(() => {
+                      setUserTranscript('');
+                      setModelTranscript('');
+                    }, 2500);
+
                 }
               }
 
@@ -3459,7 +3491,7 @@ ${historyContext}
                     setIsAgentSpeaking(true);
 
                     if (speakingTimeoutRef.current) clearTimeout(speakingTimeoutRef.current);
-                    speakingTimeoutRef.current = setTimeout(() => setIsAgentSpeaking(false), 700);
+                    speakingTimeoutRef.current = setTimeout(() => setIsAgentSpeaking(false), 400); // Reduced from 700ms
                   }
 
                   if ((part as any).text) {
@@ -3473,7 +3505,7 @@ ${historyContext}
                     transcriptTimeoutRef.current = setTimeout(() => {
                       setUserTranscript('');
                       setModelTranscript('');
-                    }, 4000);
+                    }, 2500);
                   }
                 }
               }
@@ -3489,11 +3521,12 @@ ${historyContext}
                   setUserTranscript(text);
                   saveMessage('user', text);
 
-                  if (transcriptTimeoutRef.current) clearTimeout(transcriptTimeoutRef.current);
-                  transcriptTimeoutRef.current = setTimeout(() => {
-                    setUserTranscript('');
-                    setModelTranscript('');
-                  }, 4000);
+                    if (transcriptTimeoutRef.current) clearTimeout(transcriptTimeoutRef.current);
+                    transcriptTimeoutRef.current = setTimeout(() => {
+                      setUserTranscript('');
+                      setModelTranscript('');
+                    }, 2500);
+
                 }
               }
 
@@ -3546,6 +3579,7 @@ ${historyContext}
       setIsActive(true);
       setConnecting(false);
       sessionStartingRef.current = false;
+      playChime(START_CHIME_URL);
 
       setTimeout(() => {
         sendTextToLive(
@@ -3561,6 +3595,9 @@ ${historyContext}
   };
 
   const stopSession = () => {
+    if (isActiveRef.current) {
+      playChime(STOP_CHIME_URL);
+    }
     clearSilenceFillerTimer();
     isActiveRef.current = false;
     isAgentSpeakingRef.current = false;
@@ -3765,29 +3802,28 @@ ${historyContext}
                   width={80}
                   height={80}
                 />
-                <span className="text-[7px] sm:text-[9px] font-extrabold uppercase tracking-widest z-10 text-[#d0a78b]">
-                  Stop
-                </span>
+                <motion.div
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ repeat: Infinity, duration: 1.5 }}
+                  className="z-10"
+                >
+                  <Circle className="w-6 h-6 sm:w-8 sm:h-8 fill-red-500 text-red-500" />
+                </motion.div>
               </div>
             ) : (
-                <>
-                  <motion.div
-                    animate={{ 
-                      scale: !isActive ? [1, 1.05, 1] : 1,
-                    }}
-                    transition={{ 
-                      repeat: Infinity, 
-                      duration: 2, 
-                      ease: "easeInOut" 
-                    }}
-                    className="flex items-center justify-center"
-                  >
-                    <Power className="w-7 h-7 sm:w-9 sm:h-9" />
-                  </motion.div>
-                  <span className="text-[7px] sm:text-[9px] font-extrabold uppercase tracking-widest mt-0.5 sm:mt-1">
-                    Start
-                  </span>
-                </>
+              <motion.div
+                animate={{ 
+                  scale: [1, 1.05, 1],
+                }}
+                transition={{ 
+                  repeat: Infinity, 
+                  duration: 2, 
+                  ease: "easeInOut" 
+                }}
+                className="flex items-center justify-center"
+              >
+                <Mic className="w-7 h-7 sm:w-9 sm:h-9" />
+              </motion.div>
             )}
           </button>
 
