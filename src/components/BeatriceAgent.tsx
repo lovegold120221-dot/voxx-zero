@@ -2021,20 +2021,20 @@ export function BeatriceAgent({
   };
 
   const SkillItem = ({ label, desc, enabled, copyText, icon: Icon }: { label: string, desc: string, enabled?: boolean, copyText: string, icon: any }) => (
-    <div className="group px-5 py-3.5 flex items-center justify-between border-b border-white/[0.03] last:border-b-0 hover:bg-white/[0.03] transition-colors">
-      <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-full bg-white/[0.05] flex items-center justify-center shrink-0 text-zinc-400">
-          <Icon className="w-4 h-4" />
+    <div className="group px-5 py-4 flex items-center justify-between border-b border-white/[0.03] last:border-b-0 hover:bg-white/[0.03] transition-colors">
+      <div className="flex items-center gap-4">
+        <div className="w-9 h-9 rounded-xl bg-white/[0.03] flex items-center justify-center shrink-0 text-white/50 border border-white/[0.05]">
+          <Icon className="w-5 h-5" strokeWidth={1.5} />
         </div>
-        <div className="flex flex-col gap-0.5 pr-4">
-          <span className="text-[13px] text-zinc-100 font-bold tracking-wide">{label}</span>
-          <span className="text-[10px] text-zinc-500 font-medium">{desc}</span>
+        <div className="flex flex-col gap-0.5">
+          <span className="text-sm font-semibold text-white/90 tracking-tight">{label}</span>
+          <span className="text-xs text-white/40 font-medium">{desc}</span>
         </div>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
         {typeof enabled !== 'undefined' && (
-          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full ${enabled ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-zinc-800/50 border border-zinc-700/30'}`}>
-            <div className={`w-1.5 h-1.5 rounded-full ${enabled ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.5)]' : 'bg-zinc-600'}`} />
+          <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full ${enabled ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-white/[0.03] border border-white/[0.05]'}`}>
+            <div className={`w-1.5 h-1.5 rounded-full ${enabled ? 'bg-emerald-400' : 'bg-zinc-600'}`} />
             <span className={`text-[10px] font-bold uppercase tracking-wider ${enabled ? 'text-emerald-400' : 'text-zinc-500'}`}>
               {enabled ? 'On' : 'Off'}
             </span>
@@ -2042,10 +2042,10 @@ export function BeatriceAgent({
         )}
         <button 
           onClick={() => copyToClipboard(copyText)}
-          className="p-1.5 rounded-full text-zinc-600 hover:text-[#d0a78b] hover:bg-white/5 transition-all opacity-0 group-hover:opacity-100"
+          className="p-2 rounded-full text-white/30 hover:text-[#d0a78b] hover:bg-white/5 transition-all opacity-0 group-hover:opacity-100"
           aria-label={`Copy ${label} info`}
         >
-          <Clipboard className="w-3.5 h-3.5" />
+          <Clipboard className="w-4 h-4" />
         </button>
       </div>
     </div>
@@ -4071,29 +4071,69 @@ ${historyContext}
               
               {/* Google Integration */}
               <section className="space-y-3">
-                <h2 className="text-[13px] uppercase tracking-wide text-zinc-500 font-medium px-4 mb-2">Google Integration</h2>
-                <div className="bg-[#1C1C1E] rounded-[20px] overflow-hidden p-5 flex flex-col gap-4">
+                <h2 className="text-[10px] font-semibold tracking-[0.15em] uppercase text-white/40 mb-3 px-1">Google Integration</h2>
+                <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl overflow-hidden p-5 flex flex-col gap-4">
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-2 bg-black/35 px-3 py-1.5 rounded-full border border-white/[0.02]">
                       <div className={`w-1.5 h-1.5 rounded-full ${isGoogleLinked(user) ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)] animate-pulse' : 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]'}`} />
-                      <span className={`text-[11px] font-bold uppercase tracking-wider ${isGoogleLinked(user) ? 'text-emerald-400' : 'text-amber-500'}`}>
+                      <span className={`text-[10px] font-bold uppercase tracking-wider ${isGoogleLinked(user) ? 'text-emerald-400' : 'text-amber-500'}`}>
                         {isGoogleLinked(user) ? 'Authenticated' : 'Connection Required'}
                       </span>
                     </div>
                     <button
                       onClick={onLogin}
-                      className="px-4 py-2 bg-[#d0a78b] hover:brightness-110 active:scale-95 rounded-xl text-xs font-bold text-black shadow-[0_4px_16px_rgba(208,167,139,0.2)] hover:shadow-[0_4px_20px_rgba(208,167,139,0.35)] transition-all duration-200 cursor-pointer"
+                      className="px-4 py-2 bg-[#d0a78b] hover:brightness-110 active:scale-95 rounded-xl text-xs font-bold text-black transition-all duration-200 cursor-pointer"
                     >
                       {googleToken ? 'Connected' : 'Connect Now'}
                     </button>
                   </div>
-                  <p className="text-[13px] text-zinc-400 leading-relaxed font-medium">
+                  <p className="text-[13px] text-white/60 leading-relaxed font-medium">
                     {googleToken
                       ? 'Gmail, Calendar, Drive, Tasks, and YouTube are connected.'
                       : 'Connect to enable Gmail, Calendar, Drive, Tasks, and YouTube on Beatrice\'s voice pipeline.'}
                   </p>
                 </div>
               </section>
+
+              {/* Room Tone */}
+              <section className="space-y-3">
+                <h2 className="text-[10px] font-semibold tracking-[0.15em] uppercase text-white/40 mb-3 px-1">Room Tone</h2>
+                <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl overflow-hidden">
+                  <div className="p-5 border-b border-white/[0.03] flex items-center justify-between">
+                    <div className="flex flex-col gap-0.5 pr-4">
+                      <span className="text-[15px] text-white/90 font-medium tracking-tight">Enable Ambient Sound</span>
+                      <span className="text-[13px] text-white/50 font-medium leading-relaxed">Add a calming background office/cafe bed during calls</span>
+                    </div>
+                    <button
+                      onClick={() => setAmbientEnabled(v => !v)}
+                      aria-pressed={ambientEnabled}
+                      aria-label="Toggle Ambient Sound"
+                      title="Toggle Ambient Sound"
+                      className={`w-10 h-6 rounded-full transition-all duration-300 flex items-center shrink-0 cursor-pointer ${ambientEnabled ? 'bg-[#d0a78b]' : 'bg-white/[0.1]'}`}
+                    >
+                      <span className={`block w-4.5 h-4.5 rounded-full bg-white transition-all duration-300 shadow-md ${ambientEnabled ? 'ml-[18px]' : 'ml-[3px]'}`} />
+                    </button>
+                  </div>
+                  <div className="p-5 flex items-center gap-4">
+                    <label htmlFor="ambient-volume-slider" className="text-[12px] uppercase tracking-wider text-white/50 font-semibold shrink-0 w-8">Vol</label>
+                    <input
+                      id="ambient-volume-slider"
+                      type="range"
+                      min="0"
+                      max="20"
+                      step="1"
+                      value={ambientVolume}
+                      onChange={(e) => setAmbientVolume(parseInt(e.target.value, 10))}
+                      disabled={!ambientEnabled}
+                      className="w-full h-1.5 bg-white/[0.05] accent-[#d0a78b] rounded-lg appearance-none cursor-pointer disabled:opacity-30 transition-all duration-300"
+                      aria-label="Ambient Volume"
+                      title="Ambient Volume"
+                    />
+                    <span className="text-sm font-mono font-bold text-white/80 shrink-0 w-6 text-right">{ambientVolume}</span>
+                  </div>
+                </div>
+              </section>
+
 
               {/* Room Tone */}
               <section className="space-y-3">
